@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Return - Rezo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Confirm Return</h3>
+                <p class="card-text">Are you sure you want to return this equipment?</p>
+
+                <div class="alert alert-warning">
+                    <strong>{{ borrow_record.asset.name }}</strong><br>
+                    Serial: {{ borrow_record.asset.serial_number }}<br>
+                    Borrowed on: {{ borrow_record.borrow_date }}
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success me-2">Yes, Return This</button>
+                    <a href="{% url 'my_borrowings' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

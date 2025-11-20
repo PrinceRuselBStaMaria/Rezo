@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome - Rezo{% endblock %}
+
+{% block content %}
+<div class="jumbotron text-center">
+    <h1 class="display-4">Welcome to Rezo</h1>
+    <p class="lead">Campus Asset Management System</p>
+    <hr class="my-4">
+    <p>Track university-owned equipment and manage borrowing, repairs, and disposal.</p>
+    
+    {% if user.is_authenticated %}
+        <a class="btn btn-primary btn-lg" href="{% url 'asset_list' %}" role="button">Browse Equipment</a>
+        <a class="btn btn-secondary btn-lg" href="{% url 'my_borrowings' %}" role="button">My Borrowings</a>
+    {% else %}
+        <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">Login</a>
+        <a class="btn btn-success btn-lg" href="{% url 'register' %}" role="button">Register</a>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">📦 Asset Registration</h5>
+                <p class="card-text">Track all university-owned equipment with detailed information.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">🔄 Borrowing System</h5>
+                <p class="card-text">Easy requisition and return process for all users.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">🔧 Repairs & Disposal</h5>
+                <p class="card-text">Log repairs and track equipment lifecycle.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
