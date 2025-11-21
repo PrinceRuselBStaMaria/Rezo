@@ -12,4 +12,4 @@ Features: Asset registration, requisition, repairs log, disposal tracking, repor
 
 python manage.py makemigrations
 
-python manage.py migrate                                                   □ python/Rezo py ⌉⌊ 3.13.7 14:51
+python manage.py migrate                                               
