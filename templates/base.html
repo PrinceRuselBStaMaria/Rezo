@@ -28,11 +28,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Available Equipment</a>
+                        <a class="nav-link" href="{% url 'asset_list' %}">Available Equipment</a>
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'my_borrowings' %}">My Borrowings</a>
+                        <a class="nav-link" href="{% url 'profile' %}">My Borrowings</a>
                     </li>
                     {% endif %}
                 </ul>
