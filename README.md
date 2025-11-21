@@ -10,6 +10,16 @@ Features: Asset registration, requisition, repairs log, disposal tracking, repor
 
 ## To run
 
+python manage.py migrate  
 python manage.py makemigrations
 
-python manage.py migrate                                               
+                                       
+
+## Accounts
+# create super admin
+
+Super admin
+name: admin
+pass: kulafu31
+
+## 
