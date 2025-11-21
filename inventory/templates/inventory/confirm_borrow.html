@@ -8,21 +8,55 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">Confirm Borrowing</h3>
-                <p class="card-text">Are you sure you want to borrow this equipment?</p>
+                <p class="card-text">How many items would you like to borrow?</p>
 
                 <div class="alert alert-info">
                     <strong>{{ asset.name }}</strong><br>
                     Serial: {{ asset.serial_number }}<br>
-                    Category: {{ asset.category.name }}
+                    Category: {{ asset.category.name }}<br>
+                    <hr>
+                    <small>
+                        <strong>Stock Information:</strong><br>
+                        Total Available: <span class="badge bg-primary">{{ asset.total_quantity }}</span><br>
+                        Currently Borrowed: <span class="badge bg-warning">{{ asset.get_borrowed_quantity }}</span><br>
+                        Available to Borrow: <span class="badge bg-success">{{ asset.get_available_quantity }}</span>
+                    </small>
                 </div>
 
                 <form method="POST">
                     {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <div class="input-group">
+                            <button type="button" class="btn btn-outline-secondary" onclick="decreaseQty()">−</button>
+                            <input type="number" id="quantity" name="quantity" class="form-control text-center" value="1" min="1" max="{{ asset.get_available_quantity }}" style="max-width: 80px;">
+                            <button type="button" class="btn btn-outline-secondary" onclick="increaseQty()">+</button>
+                        </div>
+                        <small class="form-text text-muted">Enter the number of items you want to borrow (Max: {{ asset.get_available_quantity }})</small>
+                    </div>
+
                     <button type="submit" class="btn btn-success me-2">Yes, Borrow This</button>
-                    <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'asset_list' %}" class="btn btn-secondary">Cancel</a>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function increaseQty() {
+    const input = document.getElementById('quantity');
+    if (parseInt(input.value) < parseInt(input.max)) {
+        input.value = parseInt(input.value) + 1;
+    }
+}
+
+function decreaseQty() {
+    const input = document.getElementById('quantity');
+    if (parseInt(input.value) > parseInt(input.min)) {
+        input.value = parseInt(input.value) - 1;
+    }
+}
+</script>
 {% endblock %}

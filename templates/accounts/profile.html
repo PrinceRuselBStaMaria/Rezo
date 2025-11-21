@@ -73,6 +73,7 @@
                         <tr>
                             <th>Item Name</th>
                             <th>Serial Number</th>
+                            <th>Quantity</th>
                             <th>Category</th>
                             <th>Borrowed Date</th>
                             <th>Status</th>
@@ -87,6 +88,9 @@
                             </td>
                             <td>
                                 <code>{{ borrowing.asset.serial_number }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ borrowing.quantity }} x</span>
                             </td>
                             <td>
                                 <span class="badge bg-secondary">{{ borrowing.asset.category.name }}</span>
@@ -131,6 +135,7 @@
                         <tr>
                             <th>Item Name</th>
                             <th>Serial Number</th>
+                            <th>Quantity</th>
                             <th>Category</th>
                             <th>Borrowed</th>
                             <th>Returned</th>
@@ -145,6 +150,9 @@
                             </td>
                             <td>
                                 <code>{{ borrowing.asset.serial_number }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ borrowing.quantity }} x</span>
                             </td>
                             <td>
                                 <span class="badge bg-secondary">{{ borrowing.asset.category.name }}</span>

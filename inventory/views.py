@@ -8,43 +8,56 @@ from django.utils import timezone
 def asset_list(request):
     assets = Asset.objects.filter(status='AVAILABLE')
     
-    # If user is authenticated, get items they already borrowed
-    borrowed_items_ids = []
-    if request.user.is_authenticated:
-        borrowed_items_ids = BorrowRecord.objects.filter(
-            user=request.user, 
-            is_returned=False
-        ).values_list('asset_id', flat=True)
+    # Filter assets that have available stock
+    available_assets = [asset for asset in assets if asset.is_stock_available()]
     
     context = {
-        'assets': assets,
-        'borrowed_items_ids': list(borrowed_items_ids),
+        'assets': available_assets,
     }
     return render(request, 'inventory/asset_list.html', context)
 
-# 2. CREATE/UPDATE: Borrow an item
+# 2. CREATE/UPDATE: Borrow an item with quantity
 @login_required
 def borrow_asset(request, pk):
     asset = get_object_or_404(Asset, pk=pk)
     
-    # Check if user already has this item borrowed
-    existing_borrow = BorrowRecord.objects.filter(
-        user=request.user,
-        asset=asset,
-        is_returned=False
-    ).exists()
-    
-    if existing_borrow:
-        messages.error(request, f'You already have {asset.name} borrowed. Please return it first.')
-        return redirect('asset_list')
-    
     if request.method == 'POST':
-        # Create borrow record
-        BorrowRecord.objects.create(user=request.user, asset=asset)
-        # Update asset status
-        asset.status = 'BORROWED'
-        asset.save()
-        messages.success(request, f'You have successfully borrowed {asset.name}')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        # Validate quantity
+        if quantity < 1:
+            messages.error(request, 'Quantity must be at least 1.')
+            return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
+        
+        # Check available stock
+        available_qty = asset.get_available_quantity()
+        if quantity > available_qty:
+            messages.error(request, f'Not enough stock. Only {available_qty} item(s) available.')
+            return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
+        
+        # Create or update borrow record
+        borrow_record, created = BorrowRecord.objects.get_or_create(
+            user=request.user,
+            asset=asset,
+            is_returned=False,
+            defaults={'quantity': quantity}
+        )
+        
+        if not created:
+            # If record already exists, check if adding more exceeds limit
+            new_quantity = borrow_record.quantity + quantity
+            if new_quantity > available_qty + borrow_record.quantity:
+                messages.error(request, f'Not enough stock. Only {available_qty} item(s) available.')
+                return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
+            borrow_record.quantity = new_quantity
+            borrow_record.save()
+        
+        # Update asset status if all stock is borrowed
+        if asset.get_available_quantity() <= 0:
+            asset.status = 'BORROWED'
+            asset.save()
+        
+        messages.success(request, f'You have successfully borrowed {quantity} x {asset.name}')
         return redirect('asset_list')
 
     return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
@@ -65,10 +78,12 @@ def return_asset(request, pk):
         borrow_record.return_date = timezone.now().date()
         borrow_record.save()
         
-        borrow_record.asset.status = 'AVAILABLE'
-        borrow_record.asset.save()
+        # Update asset status if stock becomes available
+        if borrow_record.asset.get_available_quantity() > 0:
+            borrow_record.asset.status = 'AVAILABLE'
+            borrow_record.asset.save()
         
-        messages.success(request, f'You have successfully returned {borrow_record.asset.name}')
+        messages.success(request, f'You have successfully returned {borrow_record.quantity} x {borrow_record.asset.name}')
         return redirect('profile')
     
     return render(request, 'inventory/confirm_return.html', {'borrow_record': borrow_record})
