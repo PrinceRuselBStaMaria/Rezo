@@ -7,19 +7,43 @@ from django.utils import timezone
 # 1. READ: List all available assets
 def asset_list(request):
     assets = Asset.objects.filter(status='AVAILABLE')
-    return render(request, 'inventory/asset_list.html', {'assets': assets}) # [cite: 164]
+    
+    # If user is authenticated, get items they already borrowed
+    borrowed_items_ids = []
+    if request.user.is_authenticated:
+        borrowed_items_ids = BorrowRecord.objects.filter(
+            user=request.user, 
+            is_returned=False
+        ).values_list('asset_id', flat=True)
+    
+    context = {
+        'assets': assets,
+        'borrowed_items_ids': list(borrowed_items_ids),
+    }
+    return render(request, 'inventory/asset_list.html', context)
 
 # 2. CREATE/UPDATE: Borrow an item
 @login_required
 def borrow_asset(request, pk):
-    asset = get_object_or_404(Asset, pk=pk) # [cite: 198]
+    asset = get_object_or_404(Asset, pk=pk)
     
-    if request.method == 'POST': # [cite: 199]
+    # Check if user already has this item borrowed
+    existing_borrow = BorrowRecord.objects.filter(
+        user=request.user,
+        asset=asset,
+        is_returned=False
+    ).exists()
+    
+    if existing_borrow:
+        messages.error(request, f'You already have {asset.name} borrowed. Please return it first.')
+        return redirect('asset_list')
+    
+    if request.method == 'POST':
         # Create borrow record
         BorrowRecord.objects.create(user=request.user, asset=asset)
         # Update asset status
         asset.status = 'BORROWED'
-        asset.save() # [cite: 56]
+        asset.save()
         messages.success(request, f'You have successfully borrowed {asset.name}')
         return redirect('asset_list')
 
@@ -45,7 +69,7 @@ def return_asset(request, pk):
         borrow_record.asset.save()
         
         messages.success(request, f'You have successfully returned {borrow_record.asset.name}')
-        return redirect('my_borrowings')
+        return redirect('profile')
     
     return render(request, 'inventory/confirm_return.html', {'borrow_record': borrow_record})
 
