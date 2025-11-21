@@ -17,8 +17,7 @@ python manage.py makemigrations
 
 ## Accounts
 # create super admin
-python manage.py createsuperuser                                                □ rezo △ py ⌉⌊ 3.13.7 15:03
-
+python manage.py createsuperuser                                               
 Super admin
 name: admin
 pass: kulafu31
@@ -26,3 +25,4 @@ pass: kulafu31
 ## template and library used 
 Login desing or template 
 Fornm From Uiverse.io by micaelgomestavares
+daisyui

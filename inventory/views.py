@@ -48,3 +48,7 @@ def return_asset(request, pk):
         return redirect('my_borrowings')
     
     return render(request, 'inventory/confirm_return.html', {'borrow_record': borrow_record})
+
+def home(request):
+    """Homepage view"""
+    return render(request, 'index.html')
