@@ -20,7 +20,8 @@
                 <p class="card-text">
                     <strong>Serial:</strong> {{ asset.serial_number }}<br>
                     <strong>Category:</strong> {{ asset.category.name }}<br>
-                    <strong>Status:</strong> <span class="badge bg-success">{{ asset.get_status_display }}</span>
+                    <strong>Status:</strong> <span class="badge bg-success">{{ asset.get_status_display }}</span><br>
+                    <strong>Available Stock:</strong> <span class="badge bg-info">{{ asset.get_available_quantity }}/{{ asset.total_quantity }}</span>
                 </p>
             </div>
             <div class="card-footer bg-white">
