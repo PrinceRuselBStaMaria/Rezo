@@ -17,6 +17,7 @@ python manage.py makemigrations
 
 ## Accounts
 # create super admin
+python manage.py createsuperuser                                                □ rezo △ py ⌉⌊ 3.13.7 15:03
 
 Super admin
 name: admin
