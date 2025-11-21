@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile - Rezo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Profile Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="mb-2">Welcome, {{ user.first_name|default:user.username }}!</h1>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-envelope"></i> {{ user.email|default:"No email set" }}
+                            </p>
+                            {% if user.first_name and user.last_name %}
+                            <p class="text-muted">
+                                <i class="bi bi-person"></i> {{ user.first_name }} {{ user.last_name }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'asset_list' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Borrow Equipment
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <div class="display-4 text-primary mb-2">{{ total_borrowed }}</div>
+                    <p class="card-text text-muted">Total Items Borrowed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <div class="display-4 text-warning mb-2">{{ active_count }}</div>
+                    <p class="card-text text-muted">Currently Borrowing</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <div class="display-4 text-success mb-2">{{ returned_count }}</div>
+                    <p class="card-text text-muted">Returned Items</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Borrowings Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-hourglass-split"></i> Active Borrowings
+            </h2>
+            {% if active_borrowings %}
+            <div class="table-responsive">
+                <table class="table table-hover border">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Serial Number</th>
+                            <th>Category</th>
+                            <th>Borrowed Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for borrowing in active_borrowings %}
+                        <tr>
+                            <td>
+                                <strong>{{ borrowing.asset.name }}</strong>
+                            </td>
+                            <td>
+                                <code>{{ borrowing.asset.serial_number }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ borrowing.asset.category.name }}</span>
+                            </td>
+                            <td>
+                                {{ borrowing.borrow_date|date:"M d, Y" }}
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-exclamation-circle"></i> Currently Borrowed
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'return_asset' borrowing.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-box-seam"></i> Return
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle"></i> You don't have any active borrowings. 
+                <a href="{% url 'asset_list' %}">Browse available equipment</a> to borrow items.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Borrowing History Section -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-clock-history"></i> Borrowing History
+            </h2>
+            {% if returned_borrowings %}
+            <div class="table-responsive">
+                <table class="table table-hover border">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Serial Number</th>
+                            <th>Category</th>
+                            <th>Borrowed</th>
+                            <th>Returned</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for borrowing in returned_borrowings %}
+                        <tr>
+                            <td>
+                                <strong>{{ borrowing.asset.name }}</strong>
+                            </td>
+                            <td>
+                                <code>{{ borrowing.asset.serial_number }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ borrowing.asset.category.name }}</span>
+                            </td>
+                            <td>
+                                {{ borrowing.borrow_date|date:"M d, Y" }}
+                            </td>
+                            <td>
+                                {% if borrowing.return_date %}
+                                    {{ borrowing.return_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if borrowing.return_date %}
+                                    {% widthratio borrowing.return_date|date:"U" borrowing.borrow_date|date:"U" 1 %}
+                                    <small class="text-muted">
+                                        {{ borrowing.return_date|add:"-1 days"|date:"z" }} days
+                                    </small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle"></i> You haven't returned any items yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation Footer -->
+    <div class="row mt-5 pt-4 border-top">
+        <div class="col-12 text-center">
+            <a href="{% url 'asset_list' %}" class="btn btn-primary me-2">
+                <i class="bi bi-arrow-left"></i> Back to Equipment
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
