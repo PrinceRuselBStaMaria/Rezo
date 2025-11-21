@@ -23,7 +23,8 @@ __pycache__/
 dist/
 build/
 *.whl
-
+static/css/tailwindcss
+tailwindcss
 # ==========================================
 # VIRTUAL ENVIRONMENTS
 # ==========================================
