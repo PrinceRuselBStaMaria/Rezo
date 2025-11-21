@@ -23,4 +23,6 @@ Super admin
 name: admin
 pass: kulafu31
 
-## 
+## template and library used 
+Login desing or template 
+Fornm From Uiverse.io by micaelgomestavares
