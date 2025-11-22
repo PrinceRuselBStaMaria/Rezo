@@ -80,6 +80,9 @@ To get started with Rezo, follow these steps:
 *   **Username:** `user@user.user`
 *   **Password:** `Passw0rd123`
 
+**User Account:**
+*   **Username:** `staf`
+*   **Password:** `staff`
 ## Tech Stack
 
 *   **Backend:** Django 5.2.8
