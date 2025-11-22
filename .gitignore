@@ -39,7 +39,7 @@ pipenv/
 # DJANGO-SPECIFIC
 # ==========================================
 # Database
-
+db.sqlite3
 # User-uploaded media files
 media/
 
