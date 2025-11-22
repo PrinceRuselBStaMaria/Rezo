@@ -10,9 +10,9 @@
     </div>
 
     {% if assets %}
-    <div class="grid grid-cols-2 gap-6 w-full">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {% for asset in assets %}
-            <div class="card bg-base-100 shadow-lg h-full">
+            <div class="card bg-base-100 shadow-lg w-full h-full hover:shadow-xl transition-shadow duration-300">
                 <figure class="px-6 pt-6">
                     <div class="w-full h-48 bg-base-200 rounded-lg flex items-center justify-center overflow-hidden">
                         {% if asset.image %}
@@ -43,7 +43,7 @@
                         </div>
                         
                         <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-500">Available Stock</span>
+                            <span class="text-sm text-gray-500">Stock</span>
                             <span class="badge badge-info">{{ asset.get_available_quantity }}/{{ asset.total_quantity }}</span>
                         </div>
                     </div>
