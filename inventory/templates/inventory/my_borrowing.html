@@ -22,7 +22,6 @@
                         <th>Quantity</th>
                         <th>Request Date</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,8 +33,7 @@
                         </td>
                         <td><span class="badge badge-info">{{ record.quantity }}x</span></td>
                         <td>{{ record.borrow_date|date:"M d, Y" }}</td>
-                        <td><span class="badge badge-warning">⏳ Pending</span></td>
-                        <td><span class="text-sm text-gray-500">Awaiting staff approval</span></td>
+                        <td><span class="badge badge-warning">⏳ Pending Approval</span></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -59,8 +57,8 @@
                         <th>Equipment</th>
                         <th>Quantity</th>
                         <th>Borrow Date</th>
+                        <th>Approved Date</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,12 +70,8 @@
                         </td>
                         <td><span class="badge badge-primary">{{ record.quantity }}x</span></td>
                         <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                        <td>{{ record.approved_date|date:"M d, Y" }}</td>
                         <td><span class="badge badge-success">✓ Approved</span></td>
-                        <td>
-                            <a href="{% url 'return_asset' record.id %}" class="btn btn-sm btn-warning rounded-lg">
-                                Return
-                            </a>
-                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -130,7 +124,7 @@
 
     <!-- Returned Items History -->
     <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-4">Returned Items</h2>
+        <h2 class="text-2xl font-bold mb-4">Returned Items (Processed by Staff)</h2>
         {% if returned_borrowings %}
         <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
             <table class="table table-zebra w-full">

@@ -1,0 +1,83 @@
+{% extends 'inventory/staff/base.html' %}
+
+{% block title %}Process Return - Staff{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-2xl mx-auto p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Process Item Return</h1>
+        <p class="text-gray-500">Confirm the return of borrowed items</p>
+    </div>
+
+    <!-- Return Details Card -->
+    <div class="card bg-base-100 shadow-lg rounded-3xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-xl mb-4">Return Details</h2>
+            
+            <!-- Borrow Record Info -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <p class="text-sm text-gray-500">User</p>
+                    <p class="font-semibold">{{ borrow_record.user.get_full_name|default:borrow_record.user.username }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Email</p>
+                    <p class="font-semibold">{{ borrow_record.user.email }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Equipment</p>
+                    <p class="font-semibold">{{ borrow_record.asset.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Serial Number</p>
+                    <p class="font-semibold">{{ borrow_record.asset.serial_number }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Quantity</p>
+                    <p class="font-semibold"><span class="badge badge-primary">{{ borrow_record.quantity }}x</span></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Borrow Date</p>
+                    <p class="font-semibold">{{ borrow_record.borrow_date|date:"M d, Y" }}</p>
+                </div>
+            </div>
+
+            <!-- Return Form -->
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Condition of Item</span>
+                    </label>
+                    <select name="condition" class="select select-bordered rounded-xl" required>
+                        <option value="">-- Select Condition --</option>
+                        <option value="good">Good Condition</option>
+                        <option value="fair">Fair Condition</option>
+                        <option value="damaged">Damaged</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Notes (Optional)</span>
+                    </label>
+                    <textarea name="notes" class="textarea textarea-bordered rounded-xl" rows="3" placeholder="Add any notes about the return..."></textarea>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="flex gap-3 justify-end">
+                    <a href="{% url 'staff_manage_returns' %}" class="btn btn-outline rounded-xl">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success rounded-xl">
+                        ✓ Confirm Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

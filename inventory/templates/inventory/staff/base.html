@@ -134,7 +134,19 @@
                             <span class="is-drawer-close:hidden">Borrow Requests</span>
                         </a>
                     </li>
-
+                    <li>
+                        <a href="{% url 'staff_manage_returns' %}"
+                            class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Returns">
+                            <!-- Returns icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
+                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
+                                class="my-1.5 inline-block size-4">
+                                <path d="M3 7v6h6"></path>
+                                <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+                            </svg>
+                            <span class="is-drawer-close:hidden">Manage Returns</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="{% url 'staff_manage_assets' %}"
                             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Assets">

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Q
+from datetime import timedelta
 
 # 1. READ: List all available assets
 def asset_list(request):
@@ -264,3 +265,68 @@ def staff_reject_request(request, pk):
         return redirect('staff_manage_requests')
     
     return render(request, 'inventory/staff/reject_request.html', {'borrow_record': borrow_record})
+
+@login_required
+def staff_manage_returns(request):
+    """Manage item returns - only for staff"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    # Items currently borrowed (approved, not returned)
+    pending_returns = BorrowRecord.objects.filter(
+        status='APPROVED',
+        is_returned=False
+    ).select_related('user', 'asset').order_by('borrow_date')
+    
+    # Add days_borrowed to each record
+    today = timezone.now().date()
+    for record in pending_returns:
+        record.days_borrowed = (today - record.borrow_date).days
+    
+    # Recently returned items (last 30 days)
+    thirty_days_ago = timezone.now().date() - timedelta(days=30)
+    recent_returns = BorrowRecord.objects.filter(
+        status='APPROVED',
+        is_returned=True,
+        return_date__gte=thirty_days_ago
+    ).select_related('user', 'asset').order_by('-return_date')
+    
+    # Add duration to each record
+    for record in recent_returns:
+        if record.return_date and record.borrow_date:
+            record.duration = (record.return_date - record.borrow_date).days
+    
+    context = {
+        'pending_returns': pending_returns,
+        'recent_returns': recent_returns,
+    }
+    return render(request, 'inventory/staff/manage_returns.html', context)
+
+@login_required
+def staff_process_return(request, pk):
+    """Process a return request"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    borrow_record = get_object_or_404(BorrowRecord, pk=pk, status='APPROVED', is_returned=False)
+    
+    if request.method == 'POST':
+        condition = request.POST.get('condition', 'good')
+        notes = request.POST.get('notes', '')
+        
+        # Mark as returned
+        borrow_record.is_returned = True
+        borrow_record.return_date = timezone.now().date()
+        borrow_record.save()
+        
+        # Update asset status if all stock is available again
+        if borrow_record.asset.get_available_quantity() >= borrow_record.asset.total_quantity:
+            borrow_record.asset.status = 'AVAILABLE'
+            borrow_record.asset.save()
+        
+        messages.success(request, f'Successfully processed return of {borrow_record.quantity}x {borrow_record.asset.name} from {borrow_record.user.username}')
+        return redirect('staff_manage_returns')
+    
+    return render(request, 'inventory/staff/process_return.html', {'borrow_record': borrow_record})

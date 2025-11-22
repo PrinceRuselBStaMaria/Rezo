@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <!-- Statistics Cards - Single Row -->
+    <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="card bg-base-100 shadow-lg rounded-3xl">
             <div class="card-body text-center">
@@ -49,7 +49,7 @@
 
     <!-- Pending Requests -->
     <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-4">Pending Requests</h2>
+        <h2 class="text-2xl font-bold mb-4">Pending Requests (Awaiting Approval)</h2>
         {% if pending_requests %}
         <div class="space-y-3">
             {% for borrowing in pending_requests %}
@@ -65,12 +65,17 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <span class="badge badge-info rounded-full">Pending Approval</span>
+                            <span class="badge badge-info mb-3 rounded-full">⏳ Pending</span>
+                            <p class="text-xs text-gray-500">Waiting for staff approval</p>
                         </div>
                     </div>
                 </div>
             </div>
             {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No pending requests.</span>
         </div>
         {% endif %}
     </div>
@@ -90,10 +95,16 @@
                                 <p>Serial: <code class="bg-base-200 px-2 py-1 rounded-lg">{{ borrowing.asset.serial_number }}</code></p>
                                 <p>Category: <span class="badge badge-secondary rounded-full">{{ borrowing.asset.category.name }}</span></p>
                                 <p>Borrowed: {{ borrowing.borrow_date|date:"M d, Y" }} | Qty: <span class="badge badge-primary rounded-full">{{ borrowing.quantity }}x</span></p>
+                                {% if borrowing.approved_date %}
+                                <p class="text-success text-xs">Approved: {{ borrowing.approved_date|date:"M d, Y" }}</p>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="text-right">
-                            <span class="badge badge-warning mb-3 rounded-full">Currently Borrowed</span>
+                            <span class="badge badge-success mb-3 rounded-full">✓ Approved</span>
+                            <a href="{% url 'return_asset' borrowing.id %}" class="btn btn-sm btn-warning rounded-xl">
+                                Return
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -111,48 +122,27 @@
     <div class="mb-8">
         <h2 class="text-2xl font-bold mb-4">Borrowing History</h2>
         {% if returned_borrowings %}
-        <ul class="timeline timeline-vertical">
+        <div class="space-y-3">
             {% for borrowing in returned_borrowings %}
-            <li>
-                {% if not forloop.first %}
-                <hr />
-                {% endif %}
-                <div class="timeline-start text-sm font-medium">
-                    {{ borrowing.borrow_date|date:"M d, Y" }}
-                </div>
-                <div class="timeline-middle">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        class="h-5 w-5 text-success"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                            clip-rule="evenodd"
-                        />
-                    </svg>
-                </div>
-                <div class="timeline-end timeline-box bg-base-100 shadow rounded-2xl p-4">
-                    <div class="font-bold text-lg">{{ borrowing.asset.name }}</div>
-                    <div class="text-sm text-gray-500 space-y-2 mt-2">
-                        <p>Serial: <code class="bg-base-200 px-2 py-1 rounded">{{ borrowing.asset.serial_number }}</code></p>
-                        <p>Category: <span class="badge badge-secondary rounded-full">{{ borrowing.asset.category.name }}</span></p>
-                        <p>Quantity: <span class="badge badge-primary rounded-full">{{ borrowing.quantity }}x</span></p>
-                        {% if borrowing.return_date %}
-                        <p class="text-success font-medium">Returned: {{ borrowing.return_date|date:"M d, Y" }}</p>
-                        {% else %}
-                        <p class="text-warning font-medium">Not yet returned</p>
-                        {% endif %}
+            <div class="card bg-base-100 shadow rounded-3xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <h3 class="card-title text-lg">{{ borrowing.asset.name }}</h3>
+                            <div class="text-sm text-gray-500 space-y-1 mt-2">
+                                <p>Serial: <code class="bg-base-200 px-2 py-1 rounded-lg">{{ borrowing.asset.serial_number }}</code></p>
+                                <p>Category: <span class="badge badge-secondary rounded-full">{{ borrowing.asset.category.name }}</span></p>
+                                <p>Borrowed: {{ borrowing.borrow_date|date:"M d, Y" }} | Qty: <span class="badge badge-primary rounded-full">{{ borrowing.quantity }}x</span></p>
+                                {% if borrowing.return_date %}
+                                <p class="text-success text-xs">Returned: {{ borrowing.return_date|date:"M d, Y" }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% if not forloop.last %}
-                <hr />
-                {% endif %}
-            </li>
+            </div>
             {% endfor %}
-        </ul>
+        </div>
         {% else %}
         <div class="alert alert-info rounded-2xl">
             <span>You haven't returned any items yet.</span>

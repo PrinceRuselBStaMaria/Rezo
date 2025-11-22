@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
-    def __str__(self): return self.name
+    def __str__(self): 
+        return self.name
 
 class Asset(models.Model):
     STATUS_CHOICES = [
@@ -29,23 +30,20 @@ class Asset(models.Model):
             is_returned=False,
             status='APPROVED'  # Only count APPROVED borrows
         ).aggregate(total=models.Sum('quantity'))['total'] or 0
-        print(f"DEBUG: Asset {self.name} - Borrowed (Approved): {borrowed}")
         return borrowed
     
     def get_pending_quantity(self):
-        """Get total quantity in pending requests"""
+        """Get total quantity in PENDING requests (for staff view only)"""
         pending = BorrowRecord.objects.filter(
             asset=self,
-            is_returned=False,  # Add this to exclude returned requests
             status='PENDING'
         ).aggregate(total=models.Sum('quantity'))['total'] or 0
-        print(f"DEBUG: Asset {self.name} - Pending: {pending}")
         return pending
     
     def get_available_quantity(self):
-        """Get available quantity for borrowing (excluding pending requests)"""
-        available = self.total_quantity - self.get_borrowed_quantity() - self.get_pending_quantity()
-        print(f"DEBUG: Asset {self.name} - Total: {self.total_quantity}, Available: {available}")
+        """Get available quantity for borrowing (only deduct APPROVED borrows, not PENDING)"""
+        # Available = Total - Approved Borrowed (NOT pending)
+        available = self.total_quantity - self.get_borrowed_quantity()
         return available
     
     def is_stock_available(self):
