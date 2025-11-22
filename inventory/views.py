@@ -11,6 +11,11 @@ def asset_list(request):
     # Filter assets that have available stock
     available_assets = [asset for asset in assets if asset.is_stock_available()]
     
+    # Handle search
+    search_query = request.GET.get('search', '')
+    if search_query:
+        available_assets = [asset for asset in available_assets if search_query.lower() in asset.name.lower() or search_query.lower() in asset.serial_number.lower() or search_query.lower() in asset.category.name.lower()]
+    
     context = {
         'assets': available_assets,
     }
