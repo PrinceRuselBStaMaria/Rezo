@@ -4,10 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Q
+from datetime import timedelta
 
 # 1. READ: List all available assets
 def asset_list(request):
-    assets = Asset.objects.filter(status='AVAILABLE')
+    # Get all assets (don't filter by status yet)
+    assets = Asset.objects.all()
     
     # Filter assets that have available stock
     available_assets = [asset for asset in assets if asset.is_stock_available()]
@@ -22,7 +24,7 @@ def asset_list(request):
     }
     return render(request, 'inventory/asset_list.html', context)
 
-# 2. CREATE/UPDATE: Borrow an item with quantity
+# 2. CREATE/UPDATE: Borrow an item with quantity (Request)
 @login_required
 def borrow_asset(request, pk):
     asset = get_object_or_404(Asset, pk=pk)
@@ -41,43 +43,45 @@ def borrow_asset(request, pk):
             messages.error(request, f'Not enough stock. Only {available_qty} item(s) available.')
             return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
         
-        # Create or update borrow record
-        borrow_record, created = BorrowRecord.objects.get_or_create(
+        # Create borrow REQUEST (PENDING status) - NOT automatically approved
+        BorrowRecord.objects.create(
             user=request.user,
             asset=asset,
-            is_returned=False,
-            defaults={'quantity': quantity}
+            quantity=quantity,
+            status='PENDING',  # This is the key - must be PENDING
+            is_returned=False
         )
         
-        if not created:
-            # If record already exists, check if adding more exceeds limit
-            new_quantity = borrow_record.quantity + quantity
-            if new_quantity > available_qty + borrow_record.quantity:
-                messages.error(request, f'Not enough stock. Only {available_qty} item(s) available.')
-                return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
-            borrow_record.quantity = new_quantity
-            borrow_record.save()
-        
-        # Update asset status if all stock is borrowed
-        if asset.get_available_quantity() <= 0:
-            asset.status = 'BORROWED'
-            asset.save()
-        
-        messages.success(request, f'You have successfully borrowed {quantity} x {asset.name}')
-        return redirect('asset_list')
+        messages.success(request, f'Your request to borrow {quantity} x {asset.name} has been submitted. Please wait for staff approval.')
+        return redirect('my_borrowings')  # Redirect to my_borrowings so user can see their pending request
 
     return render(request, 'inventory/confirm_borrow.html', {'asset': asset})
 
 # 3. READ: List user's borrowings
 @login_required
 def my_borrowings(request):
-    borrowings = BorrowRecord.objects.filter(user=request.user, is_returned=False)
-    return render(request, 'inventory/my_borrowings.html', {'borrowings': borrowings})
+    # Get ALL borrow records for this user
+    all_borrowings = BorrowRecord.objects.filter(user=request.user).order_by('-borrow_date')
+    
+    # Separate by status
+    pending_borrowings = all_borrowings.filter(status='PENDING')
+    approved_borrowings = all_borrowings.filter(status='APPROVED', is_returned=False)
+    rejected_borrowings = all_borrowings.filter(status='REJECTED')
+    returned_borrowings = all_borrowings.filter(status='APPROVED', is_returned=True)
+    
+    context = {
+        'borrowings': all_borrowings,  # All records
+        'pending_borrowings': pending_borrowings,
+        'approved_borrowings': approved_borrowings,
+        'rejected_borrowings': rejected_borrowings,
+        'returned_borrowings': returned_borrowings,
+    }
+    return render(request, 'inventory/my_borrowing.html', context)
 
 # 4. UPDATE: Return an item
 @login_required
 def return_asset(request, pk):
-    borrow_record = get_object_or_404(BorrowRecord, pk=pk, user=request.user)
+    borrow_record = get_object_or_404(BorrowRecord, pk=pk, user=request.user, status='APPROVED')
     
     if request.method == 'POST':
         borrow_record.is_returned = True
@@ -90,13 +94,43 @@ def return_asset(request, pk):
             borrow_record.asset.save()
         
         messages.success(request, f'You have successfully returned {borrow_record.quantity} x {borrow_record.asset.name}')
-        return redirect('profile')
+        return redirect('my_borrowings')
     
     return render(request, 'inventory/confirm_return.html', {'borrow_record': borrow_record})
 
 def home(request):
     """Homepage view"""
     return render(request, 'index.html')
+
+@login_required
+def profile(request):
+    """User profile page."""
+    # Get all borrowings for the user
+    borrowings = BorrowRecord.objects.filter(user=request.user).select_related('asset', 'asset__category').order_by('-borrow_date')
+
+    # Active borrowings (approved but not returned)
+    active_borrowings = borrowings.filter(status='APPROVED', is_returned=False)
+
+    # Returned borrowings (approved and returned)
+    returned_borrowings = borrowings.filter(status='APPROVED', is_returned=True)
+
+    # Pending requests
+    pending_requests = borrowings.filter(status='PENDING')
+
+    # Statistics
+    total_borrowed = borrowings.filter(status='APPROVED').count()
+    active_count = active_borrowings.count()
+    returned_count = returned_borrowings.count()
+
+    context = {
+        'total_borrowed': total_borrowed,
+        'active_count': active_count,
+        'returned_count': returned_count,
+        'active_borrowings': active_borrowings,
+        'returned_borrowings': returned_borrowings,
+        'pending_requests': pending_requests,
+    }
+    return render(request, 'accounts/profile.html', context)
 
 # ============================================
 # STAFF DASHBOARD VIEWS
@@ -111,12 +145,13 @@ def staff_dashboard(request):
     
     # Statistics
     total_assets = Asset.objects.count()
-    total_borrowed = BorrowRecord.objects.filter(is_returned=False).count()
+    total_borrowed = BorrowRecord.objects.filter(is_returned=False, status='APPROVED').count()
     total_returned = BorrowRecord.objects.filter(is_returned=True).count()
-    available_assets = Asset.objects.filter(status='AVAILABLE').count()
+    pending_requests = BorrowRecord.objects.filter(status='PENDING').count()
+    available_assets = sum(1 for asset in Asset.objects.all() if asset.is_stock_available())
     
-    # Recent borrowings
-    recent_borrowings = BorrowRecord.objects.select_related('user', 'asset').order_by('-borrow_date')[:10]
+    # Recent borrowings (approved only)
+    recent_borrowings = BorrowRecord.objects.filter(status='APPROVED').select_related('user', 'asset').order_by('-borrow_date')[:10]
     
     # Assets by category
     from .models import Category
@@ -126,6 +161,7 @@ def staff_dashboard(request):
         'total_assets': total_assets,
         'total_borrowed': total_borrowed,
         'total_returned': total_returned,
+        'pending_requests': pending_requests,
         'available_assets': available_assets,
         'recent_borrowings': recent_borrowings,
         'categories': categories,
@@ -134,19 +170,18 @@ def staff_dashboard(request):
 
 @login_required
 def staff_manage_assets(request):
-    """Manage assets - only for staff"""
+    """Manage all assets - only for staff"""
     if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('asset_list')
     
-    # Get all assets
-    assets = Asset.objects.select_related('category').all()
+    assets = Asset.objects.all()
     
     # Handle search
     search_query = request.GET.get('search', '')
     if search_query:
         assets = assets.filter(
-            Q(name__icontains=search_query) | 
+            Q(name__icontains=search_query) |
             Q(serial_number__icontains=search_query) |
             Q(category__name__icontains=search_query)
         )
@@ -155,7 +190,7 @@ def staff_manage_assets(request):
         'assets': assets,
         'search_query': search_query,
     }
-    return render(request, 'inventory/staff/asset_management.html', context)
+    return render(request, 'inventory/staff/asset_management.html', context)  # Use the existing filename
 
 @login_required
 def staff_reports(request):
@@ -164,24 +199,134 @@ def staff_reports(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('asset_list')
     
-    # Borrowing statistics
-    total_borrows = BorrowRecord.objects.count()
-    active_borrows = BorrowRecord.objects.filter(is_returned=False).count()
-    returned_borrows = BorrowRecord.objects.filter(is_returned=True).count()
+    return render(request, 'inventory/staff/reports.html')
+
+@login_required
+def staff_manage_requests(request):
+    """Manage borrow requests - only for staff"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
     
-    # Most borrowed assets
-    most_borrowed = Asset.objects.annotate(
-        borrow_count=Sum('borrowrecord__quantity')
-    ).order_by('-borrow_count')[:10]
-    
-    # Recent activity
-    recent_activity = BorrowRecord.objects.select_related('user', 'asset').order_by('-borrow_date')[:20]
+    # Get pending requests
+    pending_requests = BorrowRecord.objects.filter(status='PENDING').select_related('user', 'asset').order_by('-borrow_date')
     
     context = {
-        'total_borrows': total_borrows,
-        'active_borrows': active_borrows,
-        'returned_borrows': returned_borrows,
-        'most_borrowed': most_borrowed,
-        'recent_activity': recent_activity,
+        'pending_requests': pending_requests,
     }
-    return render(request, 'inventory/staff/reports.html', context)
+    return render(request, 'inventory/staff/manage_requests.html', context)
+
+@login_required
+def staff_approve_request(request, pk):
+    """Approve a borrow request"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    borrow_record = get_object_or_404(BorrowRecord, pk=pk, status='PENDING')
+    
+    # Check if stock is still available
+    available_qty = borrow_record.asset.get_available_quantity() + borrow_record.quantity  # Add back the pending quantity
+    if borrow_record.quantity > available_qty:
+        messages.error(request, 'Not enough stock available to approve this request.')
+        return redirect('staff_manage_requests')
+    
+    # APPROVE the request
+    borrow_record.status = 'APPROVED'
+    borrow_record.approved_by = request.user
+    borrow_record.approved_date = timezone.now().date()
+    borrow_record.save()
+    
+    # Update asset status if all stock is borrowed
+    if borrow_record.asset.get_available_quantity() <= 0:
+        borrow_record.asset.status = 'BORROWED'
+        borrow_record.asset.save()
+    
+    messages.success(request, f'Approved borrow request for {borrow_record.user.username} - {borrow_record.quantity} x {borrow_record.asset.name}')
+    return redirect('staff_manage_requests')
+
+@login_required
+def staff_reject_request(request, pk):
+    """Reject a borrow request"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    borrow_record = get_object_or_404(BorrowRecord, pk=pk, status='PENDING')
+    
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '')
+        borrow_record.status = 'REJECTED'
+        borrow_record.rejection_reason = reason
+        borrow_record.approved_by = request.user  # Track who rejected it
+        borrow_record.save()
+        
+        messages.success(request, f'Rejected borrow request for {borrow_record.user.username}')
+        return redirect('staff_manage_requests')
+    
+    return render(request, 'inventory/staff/reject_request.html', {'borrow_record': borrow_record})
+
+@login_required
+def staff_manage_returns(request):
+    """Manage item returns - only for staff"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    # Items currently borrowed (approved, not returned)
+    pending_returns = BorrowRecord.objects.filter(
+        status='APPROVED',
+        is_returned=False
+    ).select_related('user', 'asset').order_by('borrow_date')
+    
+    # Add days_borrowed to each record
+    today = timezone.now().date()
+    for record in pending_returns:
+        record.days_borrowed = (today - record.borrow_date).days
+    
+    # Recently returned items (last 30 days)
+    thirty_days_ago = timezone.now().date() - timedelta(days=30)
+    recent_returns = BorrowRecord.objects.filter(
+        status='APPROVED',
+        is_returned=True,
+        return_date__gte=thirty_days_ago
+    ).select_related('user', 'asset').order_by('-return_date')
+    
+    # Add duration to each record
+    for record in recent_returns:
+        if record.return_date and record.borrow_date:
+            record.duration = (record.return_date - record.borrow_date).days
+    
+    context = {
+        'pending_returns': pending_returns,
+        'recent_returns': recent_returns,
+    }
+    return render(request, 'inventory/staff/manage_returns.html', context)
+
+@login_required
+def staff_process_return(request, pk):
+    """Process a return request"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    borrow_record = get_object_or_404(BorrowRecord, pk=pk, status='APPROVED', is_returned=False)
+    
+    if request.method == 'POST':
+        condition = request.POST.get('condition', 'good')
+        notes = request.POST.get('notes', '')
+        
+        # Mark as returned
+        borrow_record.is_returned = True
+        borrow_record.return_date = timezone.now().date()
+        borrow_record.save()
+        
+        # Update asset status if all stock is available again
+        if borrow_record.asset.get_available_quantity() >= borrow_record.asset.total_quantity:
+            borrow_record.asset.status = 'AVAILABLE'
+            borrow_record.asset.save()
+        
+        messages.success(request, f'Successfully processed return of {borrow_record.quantity}x {borrow_record.asset.name} from {borrow_record.user.username}')
+        return redirect('staff_manage_returns')
+    
+    return render(request, 'inventory/staff/process_return.html', {'borrow_record': borrow_record})

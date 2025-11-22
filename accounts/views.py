@@ -61,3 +61,44 @@ def logout_view(request):
     logout(request)
     messages.success(request, 'You have been logged out successfully.')
     return redirect('login')
+
+@login_required
+def profile(request):
+    """User profile view"""
+    user = request.user
+    
+    # Pending requests - PENDING status
+    pending_requests = BorrowRecord.objects.filter(
+        user=user,
+        status='PENDING'
+    ).select_related('asset').order_by('-borrow_date')
+    
+    # Active borrowings - APPROVED and NOT returned
+    active_borrowings = BorrowRecord.objects.filter(
+        user=user,
+        status='APPROVED',
+        is_returned=False
+    ).select_related('asset').order_by('-borrow_date')
+    
+    # Returned borrowings - APPROVED and returned
+    returned_borrowings = BorrowRecord.objects.filter(
+        user=user,
+        status='APPROVED',
+        is_returned=True
+    ).select_related('asset').order_by('-return_date')
+    
+    # Statistics
+    total_borrowed = BorrowRecord.objects.filter(user=user, status='APPROVED').count()
+    active_count = active_borrowings.count()
+    returned_count = returned_borrowings.count()
+    
+    context = {
+        'user': user,
+        'pending_requests': pending_requests,  # KEY: Match template variable name
+        'active_borrowings': active_borrowings,
+        'returned_borrowings': returned_borrowings,
+        'total_borrowed': total_borrowed,
+        'active_count': active_count,
+        'returned_count': returned_count,
+    }
+    return render(request, 'accounts/profile.html', context)

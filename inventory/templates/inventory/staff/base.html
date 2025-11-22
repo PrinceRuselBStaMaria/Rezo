@@ -23,7 +23,8 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
                         stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
                         class="my-1.5 inline-block size-4">
-                        <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                        <path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z">
+                        </path>
                         <path d="M9 4v16"></path>
                         <path d="M14 10l2 2l-2 2"></path>
                     </svg>
@@ -49,7 +50,9 @@
                         </svg>
                     </label>
                 </div>
-                <div class="flex-1"></div>
+                <div class="flex-1">
+
+                </div>
                 <div class="flex-none gap-2">
                     {% if user.is_authenticated %}
                     <div class="dropdown dropdown-end">
@@ -57,10 +60,7 @@
                             <span>{{ user.username }}</span>
                         </button>
                         <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-52">
-                            <li><a href="{% url 'profile' %}">My Profile</a></li>
-                            <li><a href="{% url 'my_borrowings' %}">My Borrowings</a></li>
                             {% if user.is_staff or user.groups.all|length > 0 %}
-                            <li><hr class="my-2"></li>
                             <li><a href="{% url 'staff_dashboard' %}">Staff Dashboard</a></li>
                             <li><a href="/admin/">Admin Panel</a></li>
                             {% endif %}
@@ -99,77 +99,17 @@
             <div class="flex min-h-full flex-col items-start bg-base-200 is-drawer-close:w-14 is-drawer-open:w-64">
                 <!-- Sidebar content here -->
                 <ul class="menu w-full grow">
-                    <!-- MAIN MENU -->
-                    <li class="menu-title">
-                        <span class="is-drawer-close:hidden">Main</span>
-                    </li>
-                    <li>
-                        <a href="{% url 'home' %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right"
-                            data-tip="Home">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
-                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
-                                class="my-1.5 inline-block size-4">
-                                <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
-                                <path
-                                    d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z">
-                                </path>
-                            </svg>
-                            <span class="is-drawer-close:hidden">Home</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{% url 'asset_list' %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right"
-                            data-tip="Equipment">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
-                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
-                                class="my-1.5 inline-block size-4">
-                                <path d="M20 7h-9"></path>
-                                <path d="M14 17H5"></path>
-                                <circle cx="17" cy="17" r="3"></circle>
-                                <circle cx="7" cy="7" r="3"></circle>
-                            </svg>
-                            <span class="is-drawer-close:hidden">Available Equipment</span>
-                        </a>
-                    </li>
-
-                    {% if user.is_authenticated %}
-                    <li>
-                        <a href="{% url 'profile' %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right"
-                            data-tip="Profile">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
-                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
-                                class="my-1.5 inline-block size-4">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span class="is-drawer-close:hidden">My Profile</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{% url 'my_borrowings' %}" class="is-drawer-close:tooltip is-drawer-close:tooltip-right"
-                            data-tip="Borrowings">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
-                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
-                                class="my-1.5 inline-block size-4">
-                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2">
-                                </path>
-                                <path d="M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"></path>
-                            </svg>
-                            <span class="is-drawer-close:hidden">My Borrowings</span>
-                        </a>
-                    </li>
-                    {% endif %}
+                    <!-- USER MENU -->
 
                     <!-- STAFF MENU -->
                     {% if user.is_staff or user.groups.all|length > 0 %}
                     <li class="menu-title mt-4">
-                        <span class="is-drawer-close:hidden">Staff Panel</span>
+                        <span class="is-drawer-close:hidden">Staff</span>
                     </li>
                     <li>
                         <a href="{% url 'staff_dashboard' %}"
                             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Dashboard">
+                            <!-- Dashboard icon -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
                                 stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
                                 class="my-1.5 inline-block size-4">
@@ -185,6 +125,7 @@
                     <li>
                         <a href="{% url 'staff_manage_requests' %}"
                             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Requests">
+                            <!-- Requests icon -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
                                 stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
                                 class="my-1.5 inline-block size-4">
@@ -193,10 +134,23 @@
                             <span class="is-drawer-close:hidden">Borrow Requests</span>
                         </a>
                     </li>
-
+                    <li>
+                        <a href="{% url 'staff_manage_returns' %}"
+                            class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Returns">
+                            <!-- Returns icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
+                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
+                                class="my-1.5 inline-block size-4">
+                                <path d="M3 7v6h6"></path>
+                                <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+                            </svg>
+                            <span class="is-drawer-close:hidden">Manage Returns</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="{% url 'staff_manage_assets' %}"
                             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Assets">
+                            <!-- Assets icon -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
                                 stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
                                 class="my-1.5 inline-block size-4">
@@ -212,13 +166,12 @@
                     <li>
                         <a href="{% url 'staff_reports' %}"
                             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Reports">
+                            <!-- Reports icon -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
                                 stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
                                 class="my-1.5 inline-block size-4">
-                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                                <path d="M21 3v5h-5"></path>
-                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                                <path d="M3 21v-5h5"></path>
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <polyline points="19 12 12 19 5 12"></polyline>
                             </svg>
                             <span class="is-drawer-close:hidden">Reports</span>
                         </a>

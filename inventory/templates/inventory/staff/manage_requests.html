@@ -1,0 +1,54 @@
+{% extends 'inventory/staff/base.html' %}
+
+{% block title %}Manage Borrow Requests - Staff{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Pending Borrow Requests</h2>
+        <p class="text-muted">Review and approve/reject user borrow requests</p>
+    </div>
+</div>
+
+{% if pending_requests %}
+<div class="table-responsive mt-4">
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>User</th>
+                <th>Equipment</th>
+                <th>Quantity</th>
+                <th>Request Date</th>
+                <th>Available Stock</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in pending_requests %}
+            <tr>
+                <td>{{ request.user.get_full_name|default:request.user.username }}</td>
+                <td>
+                    {{ request.asset.name }}<br>
+                    <small class="text-muted">SN: {{ request.asset.serial_number }}</small>
+                </td>
+                <td><span class="badge bg-info">{{ request.quantity }}</span></td>
+                <td>{{ request.borrow_date }}</td>
+                <td>
+                    <span class="badge bg-success">{{ request.asset.get_available_quantity|add:request.quantity }}</span>
+                    <small class="text-muted">/ {{ request.asset.total_quantity }}</small>
+                </td>
+                <td>
+                    <a href="{% url 'staff_approve_request' request.id %}" class="btn btn-success btn-sm">Approve</a>
+                    <a href="{% url 'staff_reject_request' request.id %}" class="btn btn-danger btn-sm">Reject</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info mt-4">
+    <strong>No pending requests at the moment.</strong>
+</div>
+{% endif %}
+{% endblock %}

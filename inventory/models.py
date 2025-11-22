@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
-    def __str__(self): return self.name
+    def __str__(self): 
+        return self.name
 
 class Asset(models.Model):
     STATUS_CHOICES = [
@@ -15,7 +16,7 @@ class Asset(models.Model):
     name = models.CharField(max_length=100)
     serial_number = models.CharField(max_length=50, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    total_quantity = models.IntegerField(default=10)  # Total stock available (limit)
+    total_quantity = models.IntegerField(default=10)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='AVAILABLE')
     image = models.ImageField(upload_to='media/assets/upload', null=True, blank=True)
     
@@ -23,24 +24,49 @@ class Asset(models.Model):
         return f"{self.name} ({self.serial_number})"
     
     def get_borrowed_quantity(self):
-        """Get total quantity currently borrowed"""
-        return BorrowRecord.objects.filter(
+        """Get total quantity currently borrowed (APPROVED and NOT returned only)"""
+        borrowed = BorrowRecord.objects.filter(
             asset=self,
-            is_returned=False
+            is_returned=False,
+            status='APPROVED'  # Only count APPROVED borrows
         ).aggregate(total=models.Sum('quantity'))['total'] or 0
+        return borrowed
+    
+    def get_pending_quantity(self):
+        """Get total quantity in PENDING requests (for staff view only)"""
+        pending = BorrowRecord.objects.filter(
+            asset=self,
+            status='PENDING'
+        ).aggregate(total=models.Sum('quantity'))['total'] or 0
+        return pending
     
     def get_available_quantity(self):
-        """Get available quantity for borrowing"""
-        return self.total_quantity - self.get_borrowed_quantity()
+        """Get available quantity for borrowing (only deduct APPROVED borrows, not PENDING)"""
+        # Available = Total - Approved Borrowed (NOT pending)
+        available = self.total_quantity - self.get_borrowed_quantity()
+        return available
     
     def is_stock_available(self):
         """Check if any stock is available"""
         return self.get_available_quantity() > 0
 
 class BorrowRecord(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending Approval'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)  # Number of items borrowed
+    quantity = models.IntegerField(default=1)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     borrow_date = models.DateField(auto_now_add=True)
+    approved_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
     is_returned = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_borrows')
+    rejection_reason = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.asset.name} ({self.status})"

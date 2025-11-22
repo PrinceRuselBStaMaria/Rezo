@@ -81,7 +81,7 @@ To get started with Rezo, follow these steps:
 *   **Password:** `Passw0rd123`
 
 **User Account:**
-*   **Username:** `staf`
+*   **Username:** `staff`
 *   **Password:** `staff`
 ## Tech Stack
 
