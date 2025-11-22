@@ -1,1 +1,4 @@
 pip install pillow
+Django==5.2.8
+Pillow==10.1.0
+python-dotenv==1.0.0
