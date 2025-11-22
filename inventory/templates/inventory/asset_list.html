@@ -69,6 +69,22 @@
             </div>
         {% endfor %}
     </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center mt-8">
+        <div class="join">
+            <input
+                class="join-item btn btn-xs btn-square"
+                type="radio"
+                name="options"
+                aria-label="1"
+                checked="checked" />
+            <input class="join-item btn btn-xs btn-square" type="radio" name="options" aria-label="2" />
+            <input class="join-item btn btn-xs btn-square" type="radio" name="options" aria-label="3" />
+            <input class="join-item btn btn-xs btn-square" type="radio" name="options" aria-label="4" />
+        </div>
+    </div>
+
     {% else %}
     <div class="alert alert-info shadow-lg">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
