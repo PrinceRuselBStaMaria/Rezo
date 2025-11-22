@@ -59,19 +59,21 @@ def borrow_asset(request, pk):
 # 3. READ: List user's borrowings
 @login_required
 def my_borrowings(request):
-    # Show ALL borrow records (pending, approved, rejected) that haven't been returned
-    # Also include rejected ones so user can see them
-    borrowings = BorrowRecord.objects.filter(
-        user=request.user
-    ).exclude(
-        is_returned=True, status='APPROVED'  # Only exclude approved+returned items
-    ).order_by('-borrow_date')
+    # Get ALL borrow records for this user
+    all_borrowings = BorrowRecord.objects.filter(user=request.user).order_by('-borrow_date')
+    
+    # Separate by status
+    pending_borrowings = all_borrowings.filter(status='PENDING')
+    approved_borrowings = all_borrowings.filter(status='APPROVED', is_returned=False)
+    rejected_borrowings = all_borrowings.filter(status='REJECTED')
+    returned_borrowings = all_borrowings.filter(status='APPROVED', is_returned=True)
     
     context = {
-        'borrowings': borrowings,
-        'pending': borrowings.filter(status='PENDING'),
-        'approved': borrowings.filter(status='APPROVED', is_returned=False),
-        'rejected': borrowings.filter(status='REJECTED'),
+        'borrowings': all_borrowings,  # All records
+        'pending_borrowings': pending_borrowings,
+        'approved_borrowings': approved_borrowings,
+        'rejected_borrowings': rejected_borrowings,
+        'returned_borrowings': returned_borrowings,
     }
     return render(request, 'inventory/my_borrowing.html', context)
 
@@ -98,6 +100,36 @@ def return_asset(request, pk):
 def home(request):
     """Homepage view"""
     return render(request, 'index.html')
+
+@login_required
+def profile(request):
+    """User profile page."""
+    # Get all borrowings for the user
+    borrowings = BorrowRecord.objects.filter(user=request.user).select_related('asset', 'asset__category').order_by('-borrow_date')
+
+    # Active borrowings (approved but not returned)
+    active_borrowings = borrowings.filter(status='APPROVED', is_returned=False)
+
+    # Returned borrowings (approved and returned)
+    returned_borrowings = borrowings.filter(status='APPROVED', is_returned=True)
+
+    # Pending requests
+    pending_requests = borrowings.filter(status='PENDING')
+
+    # Statistics
+    total_borrowed = borrowings.filter(status='APPROVED').count()
+    active_count = active_borrowings.count()
+    returned_count = returned_borrowings.count()
+
+    context = {
+        'total_borrowed': total_borrowed,
+        'active_count': active_count,
+        'returned_count': returned_count,
+        'active_borrowings': active_borrowings,
+        'returned_borrowings': returned_borrowings,
+        'pending_requests': pending_requests,
+    }
+    return render(request, 'accounts/profile.html', context)
 
 # ============================================
 # STAFF DASHBOARD VIEWS
@@ -144,10 +176,20 @@ def staff_manage_assets(request):
     
     assets = Asset.objects.all()
     
+    # Handle search
+    search_query = request.GET.get('search', '')
+    if search_query:
+        assets = assets.filter(
+            Q(name__icontains=search_query) |
+            Q(serial_number__icontains=search_query) |
+            Q(category__name__icontains=search_query)
+        )
+    
     context = {
         'assets': assets,
+        'search_query': search_query,
     }
-    return render(request, 'inventory/staff/manage_assets.html', context)
+    return render(request, 'inventory/staff/asset_management.html', context)  # Use the existing filename
 
 @login_required
 def staff_reports(request):

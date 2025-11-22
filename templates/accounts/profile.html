@@ -47,6 +47,34 @@
         </div>
     </div>
 
+    <!-- Pending Requests -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Pending Requests</h2>
+        {% if pending_requests %}
+        <div class="space-y-3">
+            {% for borrowing in pending_requests %}
+            <div class="card bg-base-100 shadow rounded-3xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <h3 class="card-title text-lg">{{ borrowing.asset.name }}</h3>
+                            <div class="text-sm text-gray-500 space-y-1 mt-2">
+                                <p>Serial: <code class="bg-base-200 px-2 py-1 rounded-lg">{{ borrowing.asset.serial_number }}</code></p>
+                                <p>Category: <span class="badge badge-secondary rounded-full">{{ borrowing.asset.category.name }}</span></p>
+                                <p>Requested: {{ borrowing.borrow_date|date:"M d, Y" }} | Qty: <span class="badge badge-primary rounded-full">{{ borrowing.quantity }}x</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="badge badge-info rounded-full">Pending Approval</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
     <!-- Active Borrowings -->
     <div class="mb-8">
         <h2 class="text-2xl font-bold mb-4">Active Borrowings</h2>
@@ -66,9 +94,6 @@
                         </div>
                         <div class="text-right">
                             <span class="badge badge-warning mb-3 rounded-full">Currently Borrowed</span>
-                            <a href="{% url 'return_asset' borrowing.id %}" class="btn btn-sm btn-outline-error rounded-xl">
-                                Return
-                            </a>
                         </div>
                     </div>
                 </div>

@@ -3,61 +3,175 @@
 {% block title %}My Borrowings - Rezo{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h2>My Borrowings</h2>
-        <p class="text-muted">Your borrow requests and approved borrowings</p>
+<div class="w-full p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">My Borrowings</h1>
+        <p class="text-gray-500">Track your borrow requests and active borrowings</p>
+    </div>
+
+    <!-- Pending Requests Section -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Pending Requests (Awaiting Approval)</h2>
+        {% if pending_borrowings %}
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Quantity</th>
+                        <th>Request Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in pending_borrowings %}
+                    <tr>
+                        <td>
+                            <div class="font-semibold">{{ record.asset.name }}</div>
+                            <div class="text-sm text-gray-500">SN: {{ record.asset.serial_number }}</div>
+                        </td>
+                        <td><span class="badge badge-info">{{ record.quantity }}x</span></td>
+                        <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                        <td><span class="badge badge-warning">⏳ Pending</span></td>
+                        <td><span class="text-sm text-gray-500">Awaiting staff approval</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No pending requests.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Active Borrowings Section -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Active Borrowings</h2>
+        {% if approved_borrowings %}
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Quantity</th>
+                        <th>Borrow Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in approved_borrowings %}
+                    <tr>
+                        <td>
+                            <div class="font-semibold">{{ record.asset.name }}</div>
+                            <div class="text-sm text-gray-500">SN: {{ record.asset.serial_number }}</div>
+                        </td>
+                        <td><span class="badge badge-primary">{{ record.quantity }}x</span></td>
+                        <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                        <td><span class="badge badge-success">✓ Approved</span></td>
+                        <td>
+                            <a href="{% url 'return_asset' record.id %}" class="btn btn-sm btn-warning rounded-lg">
+                                Return
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>You don't have any active borrowings. <a href="{% url 'asset_list' %}" class="link">Browse equipment</a> to borrow items.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Rejected Requests Section -->
+    {% if rejected_borrowings %}
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Rejected Requests</h2>
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Quantity</th>
+                        <th>Request Date</th>
+                        <th>Rejection Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in rejected_borrowings %}
+                    <tr>
+                        <td>
+                            <div class="font-semibold">{{ record.asset.name }}</div>
+                            <div class="text-sm text-gray-500">SN: {{ record.asset.serial_number }}</div>
+                        </td>
+                        <td><span class="badge badge-error">{{ record.quantity }}x</span></td>
+                        <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if record.rejection_reason %}
+                            <span class="text-sm">{{ record.rejection_reason }}</span>
+                            {% else %}
+                            <span class="text-sm text-gray-500">No reason provided</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Returned Items History -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Returned Items</h2>
+        {% if returned_borrowings %}
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Quantity</th>
+                        <th>Borrow Date</th>
+                        <th>Return Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in returned_borrowings %}
+                    <tr>
+                        <td>
+                            <div class="font-semibold">{{ record.asset.name }}</div>
+                            <div class="text-sm text-gray-500">SN: {{ record.asset.serial_number }}</div>
+                        </td>
+                        <td><span class="badge badge-success">{{ record.quantity }}x</span></td>
+                        <td>{{ record.borrow_date|date:"M d, Y" }}</td>
+                        <td>{{ record.return_date|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No returned items yet.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex justify-center gap-2 mt-8 pt-4 border-t">
+        <a href="{% url 'asset_list' %}" class="btn btn-primary rounded-2xl">
+            Browse More Equipment
+        </a>
+        <a href="{% url 'profile' %}" class="btn btn-outline rounded-2xl">
+            Back to Profile
+        </a>
     </div>
 </div>
-
-{% if borrowings %}
-<div class="table-responsive mt-4">
-    <table class="table table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>Equipment</th>
-                <th>Quantity</th>
-                <th>Request Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for record in borrowings %}
-            <tr>
-                <td>
-                    {{ record.asset.name }}<br>
-                    <small class="text-muted">SN: {{ record.asset.serial_number }}</small>
-                </td>
-                <td><span class="badge bg-info">{{ record.quantity }}</span></td>
-                <td>{{ record.borrow_date }}</td>
-                <td>
-                    {% if record.status == 'PENDING' %}
-                    <span class="badge bg-warning">Pending Approval</span>
-                    {% elif record.status == 'APPROVED' %}
-                    <span class="badge bg-success">Approved</span>
-                    {% elif record.status == 'REJECTED' %}
-                    <span class="badge bg-danger">Rejected</span>
-                    {% if record.rejection_reason %}
-                    <br><small class="text-muted">{{ record.rejection_reason }}</small>
-                    {% endif %}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if record.status == 'APPROVED' %}
-                    <a href="{% url 'return_asset' record.id %}" class="btn btn-warning btn-sm">Return</a>
-                    {% elif record.status == 'PENDING' %}
-                    <span class="text-muted">Awaiting approval</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<div class="alert alert-info mt-4">
-    <strong>You haven't made any borrow requests yet.</strong>
-</div>
-{% endif %}
 {% endblock %}
