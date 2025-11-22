@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rezo - Equipment Management{% endblock %}</title>
+
+    {% load static %}
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-base-200">
+    <!-- Fixed back button -->
+    <div class="fixed top-4 left-4">
+        <a href="javascript:history.back()" class="btn btn-ghost btn-sm">
+            <img src="{% static 'svg/x.svg' %}" alt="Back" class="w-5 h-5">
+        </a>
+    </div>
+
+    <div class="w-full max-w-md">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        <!-- Auth content goes here -->
+        {% endblock %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+    
+    <script>
+        const themeController = document.querySelector('.theme-controller');
+        
+        if (themeController) {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'dark') {
+                themeController.checked = true;
+            }
+            
+            themeController.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+        }
+    </script>
+</body>
+
+</html>

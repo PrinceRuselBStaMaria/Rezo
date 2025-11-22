@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'accounts/auth_base.html' %}
 
 {% load static %}
 
@@ -10,7 +10,7 @@
 
 {% block content %}
 <div class="login-wrapper">
-    <div class="login-container">
+    <div class="login-container w-screen h-screen flex flex-col justify-center items-center">
         <form class="form" method="POST">
             {% csrf_token %}
             

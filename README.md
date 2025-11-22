@@ -64,3 +64,5 @@ You can use the following credentials to log in to the admin account:
 
 *   **Login Design/Template:** The login form design is from [Uiverse.io](https://uiverse.io/) by [micaelgomestavares](https://uiverse.io/micaelgomestavares).
 *   **UI Library:** [DaisyUI](https://daisyui.com/) is used for the user interface components.
+*   **Remix icon:** [RemixIcon](https://remixicon.com/) Icon Library.
+    
