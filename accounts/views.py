@@ -14,8 +14,10 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            # Redirect admin/staff to admin panel, regular users to profile
-            if user.is_staff or user.is_superuser:
+            # Redirect staff to staff dashboard, admin to admin panel, regular users to profile
+            if user.groups.filter(name='Staff').exists():
+                return redirect('staff_dashboard')
+            elif user.is_superuser:
                 return redirect('admin:index')
             else:
                 return redirect('profile')

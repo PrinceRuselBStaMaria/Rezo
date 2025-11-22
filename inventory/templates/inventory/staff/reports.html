@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Rezo{% endblock %}
+
+{% block content %}
+<div class="w-full p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold">Reports & Analytics</h2>
+        <p class="text-gray-500">View borrowing statistics and asset usage</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="card bg-base-100 shadow-lg rounded-3xl">
+            <div class="card-body text-center">
+                <h2 class="text-5xl font-bold text-primary">{{ total_borrows }}</h2>
+                <p class="text-gray-500">Total Borrowings</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-lg rounded-3xl">
+            <div class="card-body text-center">
+                <h2 class="text-5xl font-bold text-warning">{{ active_borrows }}</h2>
+                <p class="text-gray-500">Active Borrowings</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-lg rounded-3xl">
+            <div class="card-body text-center">
+                <h2 class="text-5xl font-bold text-success">{{ returned_borrows }}</h2>
+                <p class="text-gray-500">Returned Items</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Most Borrowed Assets -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Most Borrowed Assets</h2>
+        {% if most_borrowed %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for asset in most_borrowed %}
+            <div class="card bg-base-100 shadow rounded-2xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            {% if asset.image %}
+                            <div class="avatar">
+                                <div class="w-16 h-16 rounded-lg">
+                                    <img src="{{ asset.image.url }}" alt="{{ asset.name }}">
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="w-16 h-16 bg-base-200 rounded-lg flex items-center justify-center">
+                                <span class="text-xs text-gray-400">No img</span>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="font-bold">{{ asset.name }}</h3>
+                                <p class="text-sm text-gray-500">{{ asset.category.name }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-primary">{{ asset.borrow_count|default:0 }}</div>
+                            <p class="text-sm text-gray-500">times borrowed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No borrowing data available yet.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Recent Activity</h2>
+        {% if recent_activity %}
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Asset</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th>Return Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activity %}
+                    <tr>
+                        <td>{{ activity.borrow_date|date:"M d, Y" }}</td>
+                        <td>{{ activity.user.get_full_name|default:activity.user.username }}</td>
+                        <td>{{ activity.asset.name }}</td>
+                        <td><span class="badge badge-primary rounded-full">{{ activity.quantity }}x</span></td>
+                        <td>
+                            {% if activity.is_returned %}
+                            <span class="badge badge-success rounded-full">Returned</span>
+                            {% else %}
+                            <span class="badge badge-warning rounded-full">Borrowed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if activity.return_date %}
+                            {{ activity.return_date|date:"M d, Y" }}
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No recent activity.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-6">
+        <a href="{% url 'staff_dashboard' %}" class="btn btn-outline rounded-2xl">
+            ← Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

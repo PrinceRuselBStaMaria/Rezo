@@ -3,6 +3,7 @@ from .models import Asset, BorrowRecord
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Sum, Q
 
 # 1. READ: List all available assets
 def asset_list(request):
@@ -96,3 +97,91 @@ def return_asset(request, pk):
 def home(request):
     """Homepage view"""
     return render(request, 'index.html')
+
+# ============================================
+# STAFF DASHBOARD VIEWS
+# ============================================
+
+@login_required
+def staff_dashboard(request):
+    """Staff dashboard - only accessible to staff/admin"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    # Statistics
+    total_assets = Asset.objects.count()
+    total_borrowed = BorrowRecord.objects.filter(is_returned=False).count()
+    total_returned = BorrowRecord.objects.filter(is_returned=True).count()
+    available_assets = Asset.objects.filter(status='AVAILABLE').count()
+    
+    # Recent borrowings
+    recent_borrowings = BorrowRecord.objects.select_related('user', 'asset').order_by('-borrow_date')[:10]
+    
+    # Assets by category
+    from .models import Category
+    categories = Category.objects.all()
+    
+    context = {
+        'total_assets': total_assets,
+        'total_borrowed': total_borrowed,
+        'total_returned': total_returned,
+        'available_assets': available_assets,
+        'recent_borrowings': recent_borrowings,
+        'categories': categories,
+    }
+    return render(request, 'inventory/staff/dashboard.html', context)
+
+@login_required
+def staff_manage_assets(request):
+    """Manage assets - only for staff"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    # Get all assets
+    assets = Asset.objects.select_related('category').all()
+    
+    # Handle search
+    search_query = request.GET.get('search', '')
+    if search_query:
+        assets = assets.filter(
+            Q(name__icontains=search_query) | 
+            Q(serial_number__icontains=search_query) |
+            Q(category__name__icontains=search_query)
+        )
+    
+    context = {
+        'assets': assets,
+        'search_query': search_query,
+    }
+    return render(request, 'inventory/staff/asset_management.html', context)
+
+@login_required
+def staff_reports(request):
+    """View reports - only for staff"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    # Borrowing statistics
+    total_borrows = BorrowRecord.objects.count()
+    active_borrows = BorrowRecord.objects.filter(is_returned=False).count()
+    returned_borrows = BorrowRecord.objects.filter(is_returned=True).count()
+    
+    # Most borrowed assets
+    most_borrowed = Asset.objects.annotate(
+        borrow_count=Sum('borrowrecord__quantity')
+    ).order_by('-borrow_count')[:10]
+    
+    # Recent activity
+    recent_activity = BorrowRecord.objects.select_related('user', 'asset').order_by('-borrow_date')[:20]
+    
+    context = {
+        'total_borrows': total_borrows,
+        'active_borrows': active_borrows,
+        'returned_borrows': returned_borrows,
+        'most_borrowed': most_borrowed,
+        'recent_activity': recent_activity,
+    }
+    return render(request, 'inventory/staff/reports.html', context)
