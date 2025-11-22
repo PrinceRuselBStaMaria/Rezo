@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-md-12">
         <h2>My Borrowings</h2>
-        <p class="text-muted">Equipment you currently have borrowed</p>
+        <p class="text-muted">Your borrow requests and approved borrowings</p>
     </div>
 </div>
 
@@ -16,21 +16,39 @@
         <thead class="table-dark">
             <tr>
                 <th>Equipment</th>
-                <th>Serial Number</th>
-                <th>Category</th>
-                <th>Borrow Date</th>
+                <th>Quantity</th>
+                <th>Request Date</th>
+                <th>Status</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
             {% for record in borrowings %}
             <tr>
-                <td>{{ record.asset.name }}</td>
-                <td>{{ record.asset.serial_number }}</td>
-                <td>{{ record.asset.category.name }}</td>
+                <td>
+                    {{ record.asset.name }}<br>
+                    <small class="text-muted">SN: {{ record.asset.serial_number }}</small>
+                </td>
+                <td><span class="badge bg-info">{{ record.quantity }}</span></td>
                 <td>{{ record.borrow_date }}</td>
                 <td>
+                    {% if record.status == 'PENDING' %}
+                    <span class="badge bg-warning">Pending Approval</span>
+                    {% elif record.status == 'APPROVED' %}
+                    <span class="badge bg-success">Approved</span>
+                    {% elif record.status == 'REJECTED' %}
+                    <span class="badge bg-danger">Rejected</span>
+                    {% if record.rejection_reason %}
+                    <br><small class="text-muted">{{ record.rejection_reason }}</small>
+                    {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if record.status == 'APPROVED' %}
                     <a href="{% url 'return_asset' record.id %}" class="btn btn-warning btn-sm">Return</a>
+                    {% elif record.status == 'PENDING' %}
+                    <span class="text-muted">Awaiting approval</span>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -39,7 +57,7 @@
 </div>
 {% else %}
 <div class="alert alert-info mt-4">
-    <strong>You haven't borrowed any equipment yet.</strong>
+    <strong>You haven't made any borrow requests yet.</strong>
 </div>
 {% endif %}
 {% endblock %}

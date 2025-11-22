@@ -38,7 +38,7 @@ pipenv/
 # ==========================================
 # DJANGO-SPECIFIC
 # ==========================================
-# Database
+# Databases
 db.sqlite3
 db.*
 *.sqlite3
