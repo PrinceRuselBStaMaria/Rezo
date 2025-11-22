@@ -11,29 +11,29 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="card bg-base-100 shadow-lg rounded-3xl">
+    <div class="flex gap-6 mb-4">
+        <div class="card bg-base-100 shadow-lg rounded-2xl flex-1">
             <div class="card-body text-center">
                 <h2 class="text-5xl font-bold text-primary">{{ total_assets }}</h2>
                 <p class="text-gray-500">Total Assets</p>
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-lg rounded-3xl">
+        <div class="card bg-base-100 shadow-lg rounded-2xl flex-1">
             <div class="card-body text-center">
                 <h2 class="text-5xl font-bold text-success">{{ available_assets }}</h2>
                 <p class="text-gray-500">Available</p>
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-lg rounded-3xl">
+        <div class="card bg-base-100 shadow-lg rounded-2xl flex-1">
             <div class="card-body text-center">
                 <h2 class="text-5xl font-bold text-warning">{{ total_borrowed }}</h2>
                 <p class="text-gray-500">Currently Borrowed</p>
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-lg rounded-3xl">
+        <div class="card bg-base-100 shadow-lg rounded-2xl flex-1">
             <div class="card-body text-center">
                 <h2 class="text-5xl font-bold text-info">{{ total_returned }}</h2>
                 <p class="text-gray-500">Total Returned</p>
@@ -44,7 +44,7 @@
     <!-- Quick Actions -->
     <div class="mb-8">
         <h2 class="text-2xl font-bold mb-4">Quick Actions</h2>
-        <div class="flex gap-4 flex-wrap">
+        <div class="flex gap-4">
             <a href="{% url 'staff_manage_assets' %}" class="btn btn-primary rounded-2xl">
                 Manage Assets
             </a>
@@ -98,19 +98,5 @@
         {% endif %}
     </div>
 
-    <!-- Categories Overview -->
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-4">Categories</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {% for category in categories %}
-            <div class="card bg-base-100 shadow rounded-2xl">
-                <div class="card-body text-center">
-                    <h3 class="font-bold">{{ category.name }}</h3>
-                    <p class="text-2xl text-primary">{{ category.asset_set.count }}</p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
 </div>
 {% endblock %}
