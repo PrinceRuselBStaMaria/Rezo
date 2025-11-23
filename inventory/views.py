@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Asset, BorrowRecord
-from django.contrib.auth.decorators import login_required
+from .models import Asset, BorrowRecord, DisposalRecord
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Q
 from datetime import timedelta
+from django.http import HttpResponseForbidden 
+import uuid
 
 # 1. READ: List all available assets
 def asset_list(request):
@@ -330,3 +332,50 @@ def staff_process_return(request, pk):
         return redirect('staff_manage_returns')
     
     return render(request, 'inventory/staff/process_return.html', {'borrow_record': borrow_record})
+
+@login_required
+def staff_dispose_asset(request, asset_id):
+    """Staff/Admin can directly dispose assets"""
+    asset = Asset.objects.get(id=asset_id)
+    
+    if request.method == 'POST':
+        quantity = int(request.POST.get('quantity', 1))
+        reason = request.POST.get('reason')
+        
+        if quantity > asset.get_available_quantity():
+            messages.error(request, 'Quantity exceeds available stock')
+            return redirect('staff_manage_assets')
+        
+        disposal = DisposalRecord.objects.create(
+            asset=asset,
+            quantity=quantity,
+            reason=reason,
+            disposed_by=request.user
+        )
+        
+        # Update asset immediately
+        asset.total_quantity -= quantity
+        asset.save()
+        
+        messages.success(request, f'Disposed {quantity} units of {asset.name}')
+        return redirect('staff_manage_assets')
+    
+    return render(request, 'inventory/staff/dispose_asset.html', {'asset': asset})
+
+def is_staff_or_admin(user):
+    """Check if user is staff or admin"""
+    return user.groups.filter(name='Staff').exists() or user.is_superuser
+
+@login_required
+def staff_disposal_list(request):
+    """View all disposal records"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    disposals = DisposalRecord.objects.all().select_related('asset', 'disposed_by').order_by('-disposal_date')
+    
+    context = {
+        'disposals': disposals,
+    }
+    return render(request, 'inventory/staff/disposal_list.html', context)

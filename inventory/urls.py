@@ -15,4 +15,7 @@ urlpatterns = [
     path('staff/reject/<int:pk>/', views.staff_reject_request, name='staff_reject_request'),
     path('staff/manage-returns/', views.staff_manage_returns, name='staff_manage_returns'),  # NEW
     path('staff/process-return/<int:pk>/', views.staff_process_return, name='staff_process_return'),  # NEW
+    # Staff disposal routes
+    path('staff/disposal/<int:asset_id>/', views.staff_dispose_asset, name='staff_dispose_asset'),
+    path('staff/disposal/list/', views.staff_disposal_list, name='staff_disposal_list'),
 ]

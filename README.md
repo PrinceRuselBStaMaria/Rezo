@@ -92,7 +92,9 @@ To get started with Rezo, follow these steps:
 
 ## Templates and Libraries Used
 
-*   **Login Design/Template:** The login form design is from [Uiverse.io](https://uiverse.io/) by [micaelgomestavares](https://uiverse.io/micaelgomestavares).
+*   **Forms Template:** [Uiverse.io](https://uiverse.io/)
+     [micaelgomestavares](https://uiverse.io/micaelgomestavares).
+     <!-- From Uiverse.io by themrsami -->  
 *   **UI Library:** [DaisyUI](https://daisyui.com/) - Tailwind CSS component library.
 *   **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Icons:** [RemixIcon](https://remixicon.com/) Icon Library.
@@ -125,6 +127,6 @@ This project is licensed under the MIT License.
 
 <div align='center'>
   
-![Demo GIF](https://media.giphy.com/media/VncQh8IPag1v1cgcCv/giphy.gif)
+![Jsut a gif](https://media.giphy.com/media/VncQh8IPag1v1cgcCv/giphy.gif)
 
 </div>

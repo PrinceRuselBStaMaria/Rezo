@@ -176,6 +176,19 @@
                             <span class="is-drawer-close:hidden">Reports</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{% url 'staff_disposal_list' %}"
+                            class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Disposal">
+                            <!-- Trash icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
+                                stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor"
+                                class="my-1.5 inline-block size-4">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            <span class="is-drawer-close:hidden">Disposal Records</span>
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>

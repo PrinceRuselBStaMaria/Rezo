@@ -91,6 +91,9 @@
                             <a href="/admin/inventory/asset/{{ asset.id }}/change/" class="btn btn-sm btn-outline rounded-xl">
                                 Edit
                             </a>
+                            <a href="{% url 'staff_dispose_asset' asset.id %}" class="btn btn-sm btn-warning">
+                                Dispose
+                            </a>
                         </div>
                     </td>
                 </tr>

@@ -79,3 +79,28 @@ class BorrowRecord(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.asset.name} ({self.status})"
+
+class DisposalRecord(models.Model):
+    DISPOSAL_REASON_CHOICES = [
+        ('DAMAGED', 'Damaged Beyond Repair'),
+        ('OBSOLETE', 'Obsolete'),
+        ('END_OF_LIFE', 'End of Life'),
+        ('LOST', 'Lost/Missing'),
+        ('OTHER', 'Other'),
+    ]
+    
+    id = models.AutoField(primary_key=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='disposal_records')
+    quantity = models.IntegerField(default=1)
+    reason = models.CharField(max_length=50, choices=DISPOSAL_REASON_CHOICES)
+    description = models.TextField(blank=True, null=True)
+    disposal_date = models.DateField(auto_now_add=True)
+    disposed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='disposal_records')
+    
+    def __str__(self):
+        return f"Disposal of {self.asset.name} - {self.quantity} units"
+    
+    def can_dispose(self):
+        """Check if disposal quantity doesn't exceed available quantity"""
+        available = self.asset.get_available_quantity()
+        return self.quantity <= available
