@@ -19,10 +19,6 @@ Rezo is a campus asset management system designed to track university-owned equi
 ### Sample List
 ![Sample List](./static/readme/sample2.GIF)
 
-### Sample Video
-<video width="1080" height="auto" controls>
-  <source src="./static/readme/sample3.mp4" type="video/mp4">
-</video>
 
 </div>
 
