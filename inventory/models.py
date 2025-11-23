@@ -51,8 +51,10 @@ class Asset(models.Model):
         return pending
     
     def get_available_quantity(self):
-        """Get available quantity for borrowing (only deduct APPROVED borrows, not PENDING)"""
-        available = self.total_quantity - self.get_borrowed_quantity()
+        """Get available quantity for borrowing (deduct both APPROVED and PENDING requests)"""
+        borrowed = self.get_borrowed_quantity()  # APPROVED only
+        pending = self.get_pending_quantity()     # PENDING only
+        available = self.total_quantity - (borrowed + pending)
         return available
     
     def is_stock_available(self):
