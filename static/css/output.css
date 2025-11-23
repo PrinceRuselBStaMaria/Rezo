@@ -6960,8 +6960,14 @@
   .gap-20 {
     gap: calc(var(--spacing) * 20);
   }
+  .gap-30 {
+    gap: calc(var(--spacing) * 30);
+  }
   .gap-50 {
     gap: calc(var(--spacing) * 50);
+  }
+  .gap-80 {
+    gap: calc(var(--spacing) * 80);
   }
   .gap-90 {
     gap: calc(var(--spacing) * 90);
@@ -7425,6 +7431,9 @@
   }
   .border-base-300 {
     border-color: var(--color-base-300);
+  }
+  .border-primary {
+    border-color: var(--color-primary);
   }
   .menu-active {
     :where(:not(ul, details, .menu-title, .btn))& {
@@ -8065,6 +8074,9 @@
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
   }
+  .py-2 {
+    padding-block: calc(var(--spacing) * 2);
+  }
   .py-4 {
     padding-block: calc(var(--spacing) * 4);
   }
@@ -8076,6 +8088,9 @@
   }
   .py-40 {
     padding-block: calc(var(--spacing) * 40);
+  }
+  .py-43 {
+    padding-block: calc(var(--spacing) * 43);
   }
   .py-44 {
     padding-block: calc(var(--spacing) * 44);

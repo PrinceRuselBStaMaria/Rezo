@@ -34,8 +34,8 @@
     <div class="mockup-window border-2 border-base-300 w-11/12 mx-auto my-8 bg-base-100">
         
         <div class="border-t-2 border-base-300">
-            <div class="hero bg-base-200 py-45">
-                <div class="hero-content flex-col lg:flex-row-reverse gap-90">
+            <div class="hero bg-base-200 py-43">
+                <div class="hero-content flex-col lg:flex-row-reverse gap-80">
                     <figure class="hover-gallery max-w-lg">
                         <img src="{% static 'hero1.jpg' %}" alt="Hero 1" />
                         <img src="{% static 'hero2.jpg' %}" alt="Hero 2" />
@@ -44,26 +44,51 @@
                     </figure>
                     <div class="max-w-md">
                         <h1 class="text-5xl font-bold">Rezo</h1>
+                        <p class="text-lg text-gray-600 py-2">
+                            Campus Equipment Management System
+                        </p>
                         <p class="py-6 text-base">
                             Rezo is a campus asset management system designed to track university-owned equipment, including borrowing, repairs, and disposal.
                         </p>
-                        <div class="flex gap-2">
+                        
+                        <div class="flex flex-col gap-3">
                             {% if user.is_authenticated %}
-                            <div class="dropdown dropdown-end">
-                                <button class="btn btn-ghost" tabindex="0">
-                                    <span>{{ user.username }}</span>
-                                </button>
-                                <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-52">
-                                    {% if user.is_staff %}
-                                    <li><a href="/admin/">Admin Panel</a></li>
-                                    {% endif %}
-                                    <li><a href="{% url 'logout' %}">Logout</a></li>
-                                </ul>
+                            <!-- Authenticated User -->
+                            <div class="flex gap-2 items-center">
+                                <div class="dropdown dropdown-end flex-1">
+                                    <button class="btn btn-ghost w-full" tabindex="0">
+                                        <span>{{ user.username }}</span>
+                                    </button>
+                                    <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow bg-base-100 rounded-box w-52">
+                                        <li><a href="{% url 'asset_list' %}">Browse Equipment</a></li>
+                                        {% if user.is_staff %}
+                                        <li><a href="/admin/">Admin Panel</a></li>
+                                        {% endif %}
+                                        <li><a href="{% url 'logout' %}">Logout</a></li>
+                                    </ul>
+                                </div>
+                                <a href="{% url 'asset_list' %}" class="btn btn-primary rounded-xl">
+                                    Browse Equipment
+                                </a>
                             </div>
-                            <a href="{% url 'asset_list' %}" class="btn btn-primary">Browse Equipment</a>
                             {% else %}
-                            <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
-                            <a href="{% url 'register' %}" class="btn btn-outline">Register</a>
+                            <!-- Not Authenticated -->
+                            <div class="flex gap-2">
+                                <a href="{% url 'login' %}" class="btn btn-primary flex-1 rounded-xl">
+                                    Login
+                                </a>
+                                <a href="{% url 'register' %}" class="btn btn-outline flex-1 rounded-xl">
+                                    Register
+                                </a>
+                            </div>
+                            
+                            <!-- Browse as Guest Button -->
+                            <a href="{% url 'asset_list' %}" class="btn btn-ghost border-2 border-primary w-full rounded-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Browse Equipment as Guest
+                            </a>
                             {% endif %}
                         </div>
                     </div>
