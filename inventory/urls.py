@@ -18,4 +18,8 @@ urlpatterns = [
     path('staff/process-return/<int:pk>/', views.staff_process_return, name='staff_process_return'),
     path('staff/disposal/<int:asset_id>/', views.staff_dispose_asset, name='staff_dispose_asset'),
     path('staff/disposal/list/', views.staff_disposal_list, name='staff_disposal_list'),
+    # Maintenance URLs
+    path('staff/maintenance/', views.staff_maintenance_list, name='staff_maintenance_list'),
+    path('staff/maintenance/create/<int:asset_id>/', views.staff_create_maintenance, name='staff_create_maintenance'),
+    path('staff/maintenance/update/<int:maintenance_id>/', views.staff_update_maintenance, name='staff_update_maintenance'),
 ]

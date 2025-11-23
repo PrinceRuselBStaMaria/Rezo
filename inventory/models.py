@@ -104,3 +104,52 @@ class DisposalRecord(models.Model):
         """Check if disposal quantity doesn't exceed available quantity"""
         available = self.asset.get_available_quantity()
         return self.quantity <= available
+
+class MaintenanceRecord(models.Model):
+    MAINTENANCE_TYPE_CHOICES = [
+        ('PREVENTIVE', 'Preventive Maintenance'),
+        ('CORRECTIVE', 'Corrective Maintenance'),
+        ('EMERGENCY', 'Emergency Repair'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    
+    id = models.AutoField(primary_key=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='maintenance_records')
+    maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='maintenance_requests')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_maintenance')
+    request_date = models.DateField(auto_now_add=True)
+    start_date = models.DateField(null=True, blank=True)
+    completion_date = models.DateField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-request_date']
+    
+    def __str__(self):
+        return f"{self.asset.name} - {self.get_maintenance_type_display()} ({self.status})"
+    
+    def is_overdue(self):
+        """Check if maintenance is overdue (pending for more than 7 days)"""
+        from datetime import timedelta
+        if self.status == 'PENDING':
+            days_pending = (timezone.now().date() - self.request_date).days
+            return days_pending > 7
+        return False
+    
+    def duration_days(self):
+        """Calculate maintenance duration"""
+        if self.completion_date and self.start_date:
+            return (self.completion_date - self.start_date).days
+        elif self.start_date:
+            return (timezone.now().date() - self.start_date).days
+        return 0

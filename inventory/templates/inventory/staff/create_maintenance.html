@@ -1,0 +1,69 @@
+{% extends 'inventory/staff/base.html' %}
+
+{% block title %}Create Maintenance Request - Rezo{% endblock %}
+
+{% block content %}
+<div class="w-full p-6">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Create Maintenance Request</h1>
+        <p class="text-gray-500">Report equipment issues or schedule maintenance</p>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg rounded-2xl mb-8">
+        <div class="card-body">
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Asset Name</p>
+                    <p class="text-lg font-semibold">{{ asset.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Serial Number</p>
+                    <p class="text-lg font-mono">{{ asset.serial_number }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg rounded-2xl">
+        <div class="card-body">
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                        Maintenance Type *
+                    </label>
+                    <select name="maintenance_type" required class="select select-bordered w-full">
+                        <option value="">Select type</option>
+                        <option value="PREVENTIVE">Preventive Maintenance</option>
+                        <option value="CORRECTIVE">Corrective Maintenance</option>
+                        <option value="EMERGENCY">Emergency Repair</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                        Description *
+                    </label>
+                    <textarea 
+                        name="description" 
+                        rows="4" 
+                        required
+                        placeholder="Describe the issue or maintenance needed..."
+                        class="textarea textarea-bordered w-full"
+                    ></textarea>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" class="btn btn-primary rounded-2xl flex-1">
+                        Submit Request
+                    </button>
+                    <a href="{% url 'staff_manage_assets' %}" class="btn btn-outline rounded-2xl flex-1">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

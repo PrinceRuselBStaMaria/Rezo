@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Asset, BorrowRecord, DisposalRecord
+from .models import Asset, BorrowRecord, DisposalRecord, MaintenanceRecord
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
@@ -379,3 +379,106 @@ def staff_disposal_list(request):
         'disposals': disposals,
     }
     return render(request, 'inventory/staff/disposal_list.html', context)
+
+@login_required
+def staff_maintenance_list(request):
+    """View all maintenance records"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    maintenance_records = MaintenanceRecord.objects.all().select_related('asset', 'requested_by', 'assigned_to')
+    
+    # Separate by status
+    pending = maintenance_records.filter(status='PENDING')
+    in_progress = maintenance_records.filter(status='IN_PROGRESS')
+    completed = maintenance_records.filter(status='COMPLETED')
+    
+    context = {
+        'maintenance_records': maintenance_records,
+        'pending': pending,
+        'in_progress': in_progress,
+        'completed': completed,
+        'pending_count': pending.count(),
+        'in_progress_count': in_progress.count(),
+    }
+    return render(request, 'inventory/staff/maintenance_list.html', context)
+
+@login_required
+def staff_create_maintenance(request, asset_id):
+    """Create a maintenance request"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    asset = get_object_or_404(Asset, id=asset_id)
+    
+    if request.method == 'POST':
+        maintenance_type = request.POST.get('maintenance_type')
+        description = request.POST.get('description')
+        
+        MaintenanceRecord.objects.create(
+            asset=asset,
+            maintenance_type=maintenance_type,
+            description=description,
+            requested_by=request.user,
+            status='PENDING'
+        )
+        
+        # Update asset status to REPAIR
+        asset.status = 'REPAIR'
+        asset.save()
+        
+        messages.success(request, f'Maintenance request created for {asset.name}')
+        return redirect('staff_maintenance_list')
+    
+    return render(request, 'inventory/staff/create_maintenance.html', {'asset': asset})
+
+@login_required
+def staff_update_maintenance(request, maintenance_id):
+    """Update maintenance status (start, complete, cancel)"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    maintenance = get_object_or_404(MaintenanceRecord, id=maintenance_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'start':
+            maintenance.status = 'IN_PROGRESS'
+            maintenance.start_date = timezone.now().date()
+            maintenance.assigned_to = request.user
+            messages.success(request, 'Maintenance started.')
+            
+        elif action == 'complete':
+            cost = request.POST.get('cost')
+            notes = request.POST.get('notes')
+            
+            maintenance.status = 'COMPLETED'
+            maintenance.completion_date = timezone.now().date()
+            maintenance.cost = cost if cost else None
+            maintenance.notes = notes
+            
+            # Update asset status back to AVAILABLE
+            maintenance.asset.status = 'AVAILABLE'
+            maintenance.asset.save()
+            
+            messages.success(request, 'Maintenance completed.')
+            
+        elif action == 'cancel':
+            reason = request.POST.get('reason')
+            maintenance.status = 'CANCELLED'
+            maintenance.notes = f"Cancelled: {reason}"
+            
+            # Update asset status back to AVAILABLE
+            maintenance.asset.status = 'AVAILABLE'
+            maintenance.asset.save()
+            
+            messages.warning(request, 'Maintenance cancelled.')
+        
+        maintenance.save()
+        return redirect('staff_maintenance_list')
+    
+    return render(request, 'inventory/staff/update_maintenance.html', {'maintenance': maintenance})
