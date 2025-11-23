@@ -3,7 +3,7 @@ from .models import Asset, BorrowRecord, DisposalRecord, MaintenanceRecord
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from datetime import timedelta
 from django.http import HttpResponseForbidden 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -215,7 +215,27 @@ def staff_reports(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('asset_list')
     
-    return render(request, 'inventory/staff/reports.html')
+    # Statistics
+    total_borrows = BorrowRecord.objects.filter(status='APPROVED').count()
+    active_borrows = BorrowRecord.objects.filter(status='APPROVED', is_returned=False).count()
+    returned_borrows = BorrowRecord.objects.filter(status='APPROVED', is_returned=True).count()
+    
+    # Most borrowed assets
+    most_borrowed = Asset.objects.annotate(
+        borrow_count=Count('borrow_records', filter=Q(borrow_records__status='APPROVED'))
+    ).order_by('-borrow_count')[:5]
+    
+    # Recent activity
+    recent_activity = BorrowRecord.objects.filter(status='APPROVED').select_related('user', 'asset').order_by('-borrow_date')[:10]
+    
+    context = {
+        'total_borrows': total_borrows,
+        'active_borrows': active_borrows,
+        'returned_borrows': returned_borrows,
+        'most_borrowed': most_borrowed,
+        'recent_activity': recent_activity,
+    }
+    return render(request, 'inventory/staff/reports.html', context)
 
 @login_required
 def staff_manage_requests(request):
@@ -430,11 +450,18 @@ def staff_create_maintenance(request, asset_id):
     if request.method == 'POST':
         maintenance_type = request.POST.get('maintenance_type')
         description = request.POST.get('description')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        available_qty = asset.get_available_quantity()
+        if quantity < 1 or quantity > available_qty:
+            messages.error(request, f'Quantity must be between 1 and {available_qty} (currently available).')
+            return render(request, 'inventory/staff/create_maintenance.html', {'asset': asset})
         
         MaintenanceRecord.objects.create(
             asset=asset,
             maintenance_type=maintenance_type,
             description=description,
+            quantity=quantity,
             requested_by=request.user,
             status='PENDING'
         )

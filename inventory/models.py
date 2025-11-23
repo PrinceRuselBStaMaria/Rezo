@@ -126,6 +126,7 @@ class MaintenanceRecord(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='maintenance_records')
     maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES)
     description = models.TextField()
+    quantity = models.IntegerField(default=1, help_text='Number of items requiring maintenance')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='maintenance_requests')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_maintenance')
