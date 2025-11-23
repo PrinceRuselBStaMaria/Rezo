@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Asset, BorrowRecord, DisposalRecord, MaintenanceRecord
+from .models import Asset, BorrowRecord, DisposalRecord, MaintenanceRecord, DamagedItem
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
@@ -225,15 +225,21 @@ def staff_reports(request):
         borrow_count=Count('borrow_records', filter=Q(borrow_records__status='APPROVED'))
     ).order_by('-borrow_count')[:5]
     
-    # Recent activity
-    recent_activity = BorrowRecord.objects.filter(status='APPROVED').select_related('user', 'asset').order_by('-borrow_date')[:10]
+    # Separate active and returned borrowings
+    active_borrowings = BorrowRecord.objects.filter(status='APPROVED', is_returned=False).select_related('user', 'asset').order_by('-borrow_date')[:10]
+    returned_items = BorrowRecord.objects.filter(status='APPROVED', is_returned=True).select_related('user', 'asset').order_by('-return_date')[:10]
+    
+    # Damaged items (only non-repaired)
+    damaged_items = DamagedItem.objects.filter(is_repaired=False).select_related('asset', 'reported_by').order_by('-reported_date')
     
     context = {
         'total_borrows': total_borrows,
         'active_borrows': active_borrows,
         'returned_borrows': returned_borrows,
         'most_borrowed': most_borrowed,
-        'recent_activity': recent_activity,
+        'active_borrowings': active_borrowings,
+        'returned_items': returned_items,
+        'damaged_items': damaged_items,
     }
     return render(request, 'inventory/staff/reports.html', context)
 
@@ -356,6 +362,17 @@ def staff_process_return(request, pk):
         borrow_record.is_returned = True
         borrow_record.return_date = timezone.now().date()
         borrow_record.save()
+        
+        # If damaged, create a DamagedItem record
+        if condition == 'damaged':
+            DamagedItem.objects.create(
+                asset=borrow_record.asset,
+                quantity=borrow_record.quantity,
+                reported_by=request.user,
+                borrow_record=borrow_record,
+                description=notes
+            )
+            messages.warning(request, f'Recorded {borrow_record.quantity}x {borrow_record.asset.name} as damaged.')
         
         # Update asset status if all stock is available again
         if borrow_record.asset.get_available_quantity() >= borrow_record.asset.total_quantity:
@@ -523,3 +540,21 @@ def staff_update_maintenance(request, maintenance_id):
         return redirect('staff_maintenance_list')
     
     return render(request, 'inventory/staff/update_maintenance.html', {'maintenance': maintenance})
+
+@login_required
+def staff_mark_repaired(request, damage_id):
+    """Mark a damaged item as repaired"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    if request.method == 'POST':
+        damage = get_object_or_404(DamagedItem, pk=damage_id)
+        damage.is_repaired = True
+        damage.repaired_date = timezone.now().date()
+        damage.repaired_by = request.user
+        damage.save()
+        
+        messages.success(request, f'Marked {damage.quantity}x {damage.asset.name} as repaired.')
+    
+    return redirect('staff_reports')
