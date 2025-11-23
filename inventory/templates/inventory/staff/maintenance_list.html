@@ -40,6 +40,7 @@
                         <tr>
                             <th>Asset</th>
                             <th>Type</th>
+                            <th>Quantity</th>
                             <th>Description</th>
                             <th>Status</th>
                             <th>Requested By</th>
@@ -57,6 +58,9 @@
                             </td>
                             <td>
                                 <span class="badge badge-primary">{{ maintenance.get_maintenance_type_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-secondary">{{ maintenance.quantity }}x</span>
                             </td>
                             <td>{{ maintenance.description|truncatewords:10 }}</td>
                             <td>

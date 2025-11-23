@@ -30,7 +30,7 @@
                 {% csrf_token %}
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                    <label class="block text-sm font-medium text-white mb-3">
                         Maintenance Type *
                     </label>
                     <select name="maintenance_type" required class="select select-bordered w-full">
@@ -42,7 +42,41 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                    <label class="block text-sm font-medium text-white mb-3">
+                        Quantity to Repair *
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input 
+                            type="number" 
+                            name="quantity" 
+                            id="quantity_input"
+                            value="1" 
+                            min="1" 
+                            max="{{ asset.get_available_quantity }}"
+                            required
+                            class="input input-bordered w-full"
+                            oninput="validateQuantity(this)"
+                        />
+                        <span class="text-sm text-gray-500">/ {{ asset.get_available_quantity }}</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Max available for repair: {{ asset.get_available_quantity }}</p>
+                </div>
+
+                <script>
+                function validateQuantity(input) {
+                    const maxQty = {{ asset.get_available_quantity }};
+                    let value = parseInt(input.value) || 0;
+                    
+                    if (value > maxQty) {
+                        input.value = maxQty;
+                    } else if (value < 1) {
+                        input.value = 1;
+                    }
+                }
+                </script>
+
+                <div>
+                    <label class="block text-sm font-medium text-white mb-3">
                         Description *
                     </label>
                     <textarea 

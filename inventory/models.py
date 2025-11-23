@@ -51,10 +51,11 @@ class Asset(models.Model):
         return pending
     
     def get_available_quantity(self):
-        """Get available quantity for borrowing (deduct both APPROVED and PENDING requests)"""
+        """Get available quantity for borrowing (deduct both APPROVED and PENDING requests, plus damaged items)"""
         borrowed = self.get_borrowed_quantity()  # APPROVED only
         pending = self.get_pending_quantity()     # PENDING only
-        available = self.total_quantity - (borrowed + pending)
+        damaged = self.damaged_items.filter(is_repaired=False).aggregate(total=models.Sum('quantity'))['total'] or 0
+        available = self.total_quantity - (borrowed + pending + damaged)
         return available
     
     def is_stock_available(self):
@@ -126,6 +127,7 @@ class MaintenanceRecord(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='maintenance_records')
     maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES)
     description = models.TextField()
+    quantity = models.IntegerField(default=1, help_text='Number of items requiring maintenance')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='maintenance_requests')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_maintenance')
@@ -155,3 +157,21 @@ class MaintenanceRecord(models.Model):
         elif self.start_date:
             return (timezone.now().date() - self.start_date).days
         return 0
+
+class DamagedItem(models.Model):
+    """Track items reported as damaged during returns"""
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='damaged_items')
+    quantity = models.IntegerField(default=1)
+    reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='damaged_items_reported')
+    borrow_record = models.ForeignKey(BorrowRecord, on_delete=models.SET_NULL, null=True, blank=True, related_name='damaged_items')
+    description = models.TextField(blank=True, null=True)
+    reported_date = models.DateField(auto_now_add=True)
+    is_repaired = models.BooleanField(default=False)
+    repaired_date = models.DateField(null=True, blank=True)
+    repaired_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='repaired_damages')
+    
+    class Meta:
+        ordering = ['-reported_date']
+    
+    def __str__(self):
+        return f"{self.asset.name} - {self.quantity} units damaged on {self.reported_date}"

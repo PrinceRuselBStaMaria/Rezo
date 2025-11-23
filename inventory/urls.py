@@ -22,4 +22,7 @@ urlpatterns = [
     path('staff/maintenance/', views.staff_maintenance_list, name='staff_maintenance_list'),
     path('staff/maintenance/create/<int:asset_id>/', views.staff_create_maintenance, name='staff_create_maintenance'),
     path('staff/maintenance/update/<int:maintenance_id>/', views.staff_update_maintenance, name='staff_update_maintenance'),
+    
+    # Damage URLs
+    path('staff/mark-repaired/<int:damage_id>/', views.staff_mark_repaired, name='staff_mark_repaired'),
 ]
