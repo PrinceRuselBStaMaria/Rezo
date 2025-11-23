@@ -15,7 +15,7 @@
                 <input 
                     type="text" 
                     name="search"
-                    value="{{ request.GET.search }}"
+                    value="{{ search_query }}"
                     placeholder="Search equipment..." 
                     class="input input-bordered rounded-2xl flex-1"
                 />
@@ -90,19 +90,49 @@
     </div>
 
     <!-- Pagination -->
+    {% if assets.has_other_pages %}
     <div class="flex justify-center mt-8">
         <div class="join">
-            <input
-                class="join-item btn btn-square"
-                type="radio"
-                name="options"
-                aria-label="1"
-                checked="checked" />
-            <input class="join-item btn btn-square" type="radio" name="options" aria-label="2" />
-            <input class="join-item btn btn-square" type="radio" name="options" aria-label="3" />
-            <input class="join-item btn btn-square" type="radio" name="options" aria-label="4" />
+            <!-- Previous Button -->
+            {% if assets.has_previous %}
+                <a href="?page={{ assets.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                   class="join-item btn btn-outline">
+                    «
+                </a>
+            {% else %}
+                <button class="join-item btn btn-disabled">«</button>
+            {% endif %}
+
+            <!-- Page Numbers -->
+            {% for num in assets.paginator.page_range %}
+                {% if assets.number == num %}
+                    <button class="join-item btn btn-primary">{{ num }}</button>
+                {% elif num > assets.number|add:'-3' and num < assets.number|add:'3' %}
+                    <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                       class="join-item btn btn-outline">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Button -->
+            {% if assets.has_next %}
+                <a href="?page={{ assets.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                   class="join-item btn btn-outline">
+                    »
+                </a>
+            {% else %}
+                <button class="join-item btn btn-disabled">»</button>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Page Info -->
+    <div class="text-center mt-4 text-sm text-gray-500">
+        Page {{ assets.number }} of {{ assets.paginator.num_pages }} 
+        ({{ assets.paginator.count }} total items)
+    </div>
+    {% endif %}
 
     {% else %}
     <div class="alert alert-info shadow-lg rounded-2xl">

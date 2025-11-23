@@ -6,23 +6,37 @@ from django.utils import timezone
 from django.db.models import Sum, Q
 from datetime import timedelta
 from django.http import HttpResponseForbidden 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import uuid
 
 # 1. READ: List all available assets
 def asset_list(request):
-    # Get all assets (don't filter by status yet)
-    assets = Asset.objects.all()
+    """Display available assets with pagination"""
+    assets = Asset.objects.filter(status='AVAILABLE').order_by('-created_at')
     
-    # Filter assets that have available stock
-    available_assets = [asset for asset in assets if asset.is_stock_available()]
-    
-    # Handle search
+    # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
-        available_assets = [asset for asset in available_assets if search_query.lower() in asset.name.lower() or search_query.lower() in asset.serial_number.lower() or search_query.lower() in asset.category.name.lower()]
+        assets = assets.filter(
+            Q(name__icontains=search_query) | 
+            Q(serial_number__icontains=search_query) |
+            Q(category__name__icontains=search_query)
+        )
+    
+    # Pagination - 6 assets per page
+    paginator = Paginator(assets, 6)
+    page = request.GET.get('page', 1)
+    
+    try:
+        assets_page = paginator.page(page)
+    except PageNotAnInteger:
+        assets_page = paginator.page(1)
+    except EmptyPage:
+        assets_page = paginator.page(paginator.num_pages)
     
     context = {
-        'assets': available_assets,
+        'assets': assets_page,
+        'search_query': search_query,
     }
     return render(request, 'inventory/asset_list.html', context)
 

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone  # Add this import
 import uuid
 
 class Category(models.Model):
@@ -140,7 +141,6 @@ class MaintenanceRecord(models.Model):
     
     def is_overdue(self):
         """Check if maintenance is overdue (pending for more than 7 days)"""
-        from datetime import timedelta
         if self.status == 'PENDING':
             days_pending = (timezone.now().date() - self.request_date).days
             return days_pending > 7
