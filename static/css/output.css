@@ -4228,8 +4228,14 @@
       --toast-y: 0;
     }
   }
+  .top-2 {
+    top: calc(var(--spacing) * 2);
+  }
   .top-4 {
     top: calc(var(--spacing) * 4);
+  }
+  .right-2 {
+    right: calc(var(--spacing) * 2);
   }
   .dock-sm {
     @layer daisyui.l1.l2 {
@@ -5680,6 +5686,9 @@
       font-weight: 600;
     }
   }
+  .mb-1 {
+    margin-bottom: calc(var(--spacing) * 1);
+  }
   .mb-2 {
     margin-bottom: calc(var(--spacing) * 2);
   }
@@ -6496,6 +6505,9 @@
   .h-48 {
     height: calc(var(--spacing) * 48);
   }
+  .h-80 {
+    height: calc(var(--spacing) * 80);
+  }
   .h-fit {
     height: fit-content;
   }
@@ -6654,6 +6666,9 @@
   .w-52 {
     width: calc(var(--spacing) * 52);
   }
+  .w-80 {
+    width: calc(var(--spacing) * 80);
+  }
   .w-fit {
     width: fit-content;
   }
@@ -6757,6 +6772,9 @@
         outline-offset: 2px;
       }
     }
+  }
+  .cursor-pointer {
+    cursor: pointer;
   }
   .resize {
     resize: both;

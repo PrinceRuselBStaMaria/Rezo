@@ -31,7 +31,8 @@
     {% if assets %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {% for asset in assets %}
-            <div class="card bg-base-100 shadow-lg w-full h-full hover:shadow-xl transition-shadow duration-300 rounded-3xl">
+            <div class="card bg-base-100 shadow-lg w-full h-full hover:shadow-xl transition-shadow duration-300 rounded-3xl cursor-pointer"
+                 onclick="document.getElementById('asset_modal_{{ asset.id }}').showModal()">
                 <figure class="px-6 pt-6">
                     <div class="w-full h-48 bg-base-200 rounded-lg flex items-center justify-center overflow-hidden">
                         {% if asset.image %}
@@ -70,7 +71,7 @@
                     <div class="card-actions w-full gap-2 mt-auto">
                         {% if user.is_authenticated %}
                             {% if asset.get_available_quantity > 0 %}
-                            <a href="{% url 'borrow_asset' asset.id %}" class="btn btn-primary btn-sm flex-1 rounded-xl">
+                            <a href="{% url 'borrow_asset' asset.id %}" class="btn btn-primary btn-sm flex-1 rounded-xl" onclick="event.stopPropagation()">
                                 Borrow Now
                             </a>
                             {% else %}
@@ -79,13 +80,95 @@
                             </button>
                             {% endif %}
                         {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-outline btn-sm flex-1 rounded-xl">
+                        <a href="{% url 'login' %}" class="btn btn-outline btn-sm flex-1 rounded-xl" onclick="event.stopPropagation()">
                             Login to Borrow
                         </a>
                         {% endif %}
                     </div>
                 </div>
             </div>
+
+            <!-- Modal for each asset -->
+            <dialog id="asset_modal_{{ asset.id }}" class="modal">
+                <div class="modal-box max-w-2xl bg-base-100">
+                    <form method="dialog">
+                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    </form>
+                    
+                    <h3 class="font-bold text-2xl mb-6">{{ asset.name }}</h3>
+                    
+                    <div class="flex justify-center mb-6">
+                        <div class="hover-3d">
+                            <!-- content -->
+                            <figure class="w-80 rounded-2xl overflow-hidden">
+                                {% if asset.image %}
+                                <img src="{{ asset.image.url }}" alt="{{ asset.name }}" class="w-full h-full object-cover" />
+                                {% else %}
+                                <div class="w-full h-80 bg-base-200 flex items-center justify-center">
+                                    <span class="text-gray-400 text-lg">No Image Available</span>
+                                </div>
+                                {% endif %}
+                            </figure>
+                            <!-- 8 empty divs needed for the 3D effect -->
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Serial Number</p>
+                                <p class="font-semibold text-lg font-mono">{{ asset.serial_number }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Category</p>
+                                <p class="font-semibold text-lg">{{ asset.category.name }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Status</p>
+                                <span class="badge badge-success badge-lg">{{ asset.get_status_display }}</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Available Stock</p>
+                                <p class="font-bold text-lg text-info">{{ asset.get_available_quantity }}/{{ asset.total_quantity }}</p>
+                            </div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="modal-action">
+                            {% if user.is_authenticated %}
+                                {% if asset.get_available_quantity > 0 %}
+                                <a href="{% url 'borrow_asset' asset.id %}" class="btn btn-primary rounded-xl flex-1">
+                                    Borrow This Equipment
+                                </a>
+                                {% else %}
+                                <button class="btn btn-disabled rounded-xl flex-1">
+                                    Out of Stock
+                                </button>
+                                {% endif %}
+                            {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-outline rounded-xl flex-1">
+                                Login to Borrow
+                            </a>
+                            {% endif %}
+                            <form method="dialog">
+                                <button class="btn btn-ghost rounded-xl">Close</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
         {% endfor %}
     </div>
 
