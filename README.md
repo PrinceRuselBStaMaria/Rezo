@@ -100,6 +100,11 @@ To get started with Rezo, follow these steps:
 *   **Icons:** [RemixIcon](https://remixicon.com/) Icon Library.
 
 ## Project Structure
+Images uses from unsplash
+simone-hutsch-_wpce-AsLxk-unsplash
+jakub-zerdzicki-gJ8bkUlUFkY-unsplash
+nikita-kachanovsky-OVbeSXRk_9E-unsplash
+## Project Structure
 
 ```
 rezo/
