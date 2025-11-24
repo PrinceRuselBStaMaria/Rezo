@@ -1,0 +1,106 @@
+{% extends 'inventory/staff/base.html' %}
+
+{% block title %}Dispose Asset - Rezo{% endblock %}
+
+{% block content %}
+<div class="w-full p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Dispose Asset</h1>
+        <p class="text-gray-500">Remove equipment from inventory</p>
+    </div>
+
+    <!-- Asset Information Card -->
+    <div class="card bg-base-100 shadow-lg rounded-2xl mb-8">
+        <div class="card-body">
+            <div class="grid grid-cols-3 gap-6">
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Asset Name</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ asset.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Serial Number</p>
+                    <p class="text-lg font-mono font-semibold text-gray-900">{{ asset.serial_number }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Available Stock</p>
+                    <p class="text-lg font-bold text-warning">{{ asset.get_available_quantity }} units</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disposal Form Card -->
+    <div class="card bg-base-100 shadow-lg rounded-2xl">
+        <div class="card-body">
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Quantity Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                        Quantity to Dispose *
+                    </label>
+                    <input 
+                        type="number" 
+                        name="quantity" 
+                        min="1" 
+                        max="{{ asset.get_available_quantity }}" 
+                        required
+                        placeholder="Enter quantity"
+                        class="input input-bordered w-full"
+                    />
+                </div>
+
+                <!-- Reason Dropdown -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                        Reason for Disposal *
+                    </label>
+                    <select 
+                        name="reason" 
+                        required
+                        class="select select-bordered w-full"
+                    >
+                        <option value="">Select a reason</option>
+                        <option value="DAMAGED">Damaged Beyond Repair</option>
+                        <option value="OBSOLETE">Obsolete</option>
+                        <option value="END_OF_LIFE">End of Life</option>
+                        <option value="LOST">Lost/Missing</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+
+                <!-- Description Textarea -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">
+                        Description (Optional)
+                    </label>
+                    <textarea 
+                        name="description" 
+                        rows="4" 
+                        placeholder="Additional notes about disposal..."
+                        class="textarea textarea-bordered w-full"
+                    ></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 pt-4">
+                    <button 
+                        type="submit"
+                        class="btn btn-error rounded-2xl flex-1"
+                    >
+                        Dispose Asset
+                    </button>
+                    <a 
+                        href="{% url 'staff_manage_assets' %}" 
+                        class="btn btn-outline rounded-2xl flex-1"
+                    >
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

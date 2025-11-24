@@ -14,11 +14,11 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            # Redirect staff to staff dashboard, admin to admin panel, regular users to profile
-            if user.groups.filter(name='Staff').exists():
+            # Redirect superuser/admin to staff dashboard FIRST
+            if user.is_superuser:
                 return redirect('staff_dashboard')
-            elif user.is_superuser:
-                return redirect('admin:index')
+            elif user.groups.filter(name='Staff').exists():
+                return redirect('staff_dashboard')
             else:
                 return redirect('profile')
         else:
@@ -40,20 +40,37 @@ def register_view(request):
 @login_required
 def profile_view(request):
     """User profile and dashboard view"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
     user = request.user
-    borrowings = BorrowRecord.objects.filter(user=user).order_by('-borrow_date')
-    active_borrowings = borrowings.filter(is_returned=False)
-    returned_borrowings = borrowings.filter(is_returned=True)
+    
+    # Get all borrow records for the user
+    pending_requests = BorrowRecord.objects.filter(
+        user=user,
+        status='PENDING'  # Make sure this matches your STATUS_CHOICES
+    ).order_by('-borrow_date')
+    
+    active_borrowings = BorrowRecord.objects.filter(
+        user=user,
+        status='APPROVED',
+        is_returned=False
+    ).order_by('-borrow_date')
+    
+    returned_borrowings = BorrowRecord.objects.filter(
+        user=user,
+        is_returned=True
+    ).order_by('-return_date')
     
     context = {
-        'user': user,
-        'borrowings': borrowings,
+        'pending_requests': pending_requests,
         'active_borrowings': active_borrowings,
         'returned_borrowings': returned_borrowings,
-        'total_borrowed': borrowings.count(),
+        'total_borrowed': BorrowRecord.objects.filter(user=user).count(),
         'active_count': active_borrowings.count(),
         'returned_count': returned_borrowings.count(),
     }
+    
     return render(request, 'accounts/profile.html', context)
 
 def logout_view(request):

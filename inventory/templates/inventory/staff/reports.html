@@ -77,42 +77,30 @@
         {% endif %}
     </div>
 
-    <!-- Recent Activity -->
+    <!-- Active Borrowings -->
     <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-4">Recent Activity</h2>
-        {% if recent_activity %}
+        <h2 class="text-2xl font-bold mb-4">Active Borrowings</h2>
+        {% if active_borrowings %}
         <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
             <table class="table table-zebra w-full">
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <th>Borrowed Date</th>
                         <th>User</th>
                         <th>Asset</th>
                         <th>Quantity</th>
                         <th>Status</th>
-                        <th>Return Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for activity in recent_activity %}
+                    {% for activity in active_borrowings %}
                     <tr>
                         <td>{{ activity.borrow_date|date:"M d, Y" }}</td>
                         <td>{{ activity.user.get_full_name|default:activity.user.username }}</td>
                         <td>{{ activity.asset.name }}</td>
                         <td><span class="badge badge-primary rounded-full">{{ activity.quantity }}x</span></td>
                         <td>
-                            {% if activity.is_returned %}
-                            <span class="badge badge-success rounded-full">Returned</span>
-                            {% else %}
-                            <span class="badge badge-warning rounded-full">Borrowed</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if activity.return_date %}
-                            {{ activity.return_date|date:"M d, Y" }}
-                            {% else %}
-                            <span class="text-gray-400">-</span>
-                            {% endif %}
+                            <span class="badge badge-warning rounded-full">Currently Borrowed</span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -121,7 +109,94 @@
         </div>
         {% else %}
         <div class="alert alert-info rounded-2xl">
-            <span>No recent activity.</span>
+            <span>No active borrowings.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Returned Items -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Returned Items</h2>
+        {% if returned_items %}
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Borrowed Date</th>
+                        <th>User</th>
+                        <th>Asset</th>
+                        <th>Quantity</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in returned_items %}
+                    <tr>
+                        <td>{{ item.borrow_date|date:"M d, Y" }}</td>
+                        <td>{{ item.user.get_full_name|default:item.user.username }}</td>
+                        <td>{{ item.asset.name }}</td>
+                        <td><span class="badge badge-primary rounded-full">{{ item.quantity }}x</span></td>
+                        <td>
+                            {% if item.return_date %}
+                            {{ item.return_date|date:"M d, Y" }}
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-success rounded-full">Returned</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No returned items yet.</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Damaged Items -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold mb-4">Damaged Items (Pending Repair)</h2>
+        {% if damaged_items %}
+        <div class="overflow-x-auto bg-base-100 shadow-lg rounded-2xl">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Reported Date</th>
+                        <th>Asset</th>
+                        <th>Quantity Damaged</th>
+                        <th>Reported By</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for damage in damaged_items %}
+                    <tr>
+                        <td>{{ damage.reported_date|date:"M d, Y" }}</td>
+                        <td>{{ damage.asset.name }}</td>
+                        <td><span class="badge badge-error rounded-full">{{ damage.quantity }}x</span></td>
+                        <td>{{ damage.reported_by.get_full_name|default:damage.reported_by.username }}</td>
+                        <td>{{ damage.description|truncatewords:10 }}</td>
+                        <td>
+                            <form method="POST" action="{% url 'staff_mark_repaired' damage.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success rounded-xl" onclick="return confirm('Mark this as repaired?')">✓ Repaired</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info rounded-2xl">
+            <span>No damaged items reported yet.</span>
         </div>
         {% endif %}
     </div>

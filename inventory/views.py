@@ -1,26 +1,42 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Asset, BorrowRecord
-from django.contrib.auth.decorators import login_required
+from .models import Asset, BorrowRecord, DisposalRecord, MaintenanceRecord, DamagedItem
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from datetime import timedelta
+from django.http import HttpResponseForbidden 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import uuid
 
 # 1. READ: List all available assets
 def asset_list(request):
-    # Get all assets (don't filter by status yet)
-    assets = Asset.objects.all()
+    """Display available assets with pagination"""
+    assets = Asset.objects.filter(status='AVAILABLE').order_by('-created_at')
     
-    # Filter assets that have available stock
-    available_assets = [asset for asset in assets if asset.is_stock_available()]
-    
-    # Handle search
+    # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
-        available_assets = [asset for asset in available_assets if search_query.lower() in asset.name.lower() or search_query.lower() in asset.serial_number.lower() or search_query.lower() in asset.category.name.lower()]
+        assets = assets.filter(
+            Q(name__icontains=search_query) | 
+            Q(serial_number__icontains=search_query) |
+            Q(category__name__icontains=search_query)
+        )
+    
+    # Pagination - 6 assets per page
+    paginator = Paginator(assets, 6)
+    page = request.GET.get('page', 1)
+    
+    try:
+        assets_page = paginator.page(page)
+    except PageNotAnInteger:
+        assets_page = paginator.page(1)
+    except EmptyPage:
+        assets_page = paginator.page(paginator.num_pages)
     
     context = {
-        'assets': available_assets,
+        'assets': assets_page,
+        'search_query': search_query,
     }
     return render(request, 'inventory/asset_list.html', context)
 
@@ -199,7 +215,33 @@ def staff_reports(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('asset_list')
     
-    return render(request, 'inventory/staff/reports.html')
+    # Statistics
+    total_borrows = BorrowRecord.objects.filter(status='APPROVED').count()
+    active_borrows = BorrowRecord.objects.filter(status='APPROVED', is_returned=False).count()
+    returned_borrows = BorrowRecord.objects.filter(status='APPROVED', is_returned=True).count()
+    
+    # Most borrowed assets
+    most_borrowed = Asset.objects.annotate(
+        borrow_count=Count('borrow_records', filter=Q(borrow_records__status='APPROVED'))
+    ).order_by('-borrow_count')[:5]
+    
+    # Separate active and returned borrowings
+    active_borrowings = BorrowRecord.objects.filter(status='APPROVED', is_returned=False).select_related('user', 'asset').order_by('-borrow_date')[:10]
+    returned_items = BorrowRecord.objects.filter(status='APPROVED', is_returned=True).select_related('user', 'asset').order_by('-return_date')[:10]
+    
+    # Damaged items (only non-repaired)
+    damaged_items = DamagedItem.objects.filter(is_repaired=False).select_related('asset', 'reported_by').order_by('-reported_date')
+    
+    context = {
+        'total_borrows': total_borrows,
+        'active_borrows': active_borrows,
+        'returned_borrows': returned_borrows,
+        'most_borrowed': most_borrowed,
+        'active_borrowings': active_borrowings,
+        'returned_items': returned_items,
+        'damaged_items': damaged_items,
+    }
+    return render(request, 'inventory/staff/reports.html', context)
 
 @login_required
 def staff_manage_requests(request):
@@ -321,6 +363,17 @@ def staff_process_return(request, pk):
         borrow_record.return_date = timezone.now().date()
         borrow_record.save()
         
+        # If damaged, create a DamagedItem record
+        if condition == 'damaged':
+            DamagedItem.objects.create(
+                asset=borrow_record.asset,
+                quantity=borrow_record.quantity,
+                reported_by=request.user,
+                borrow_record=borrow_record,
+                description=notes
+            )
+            messages.warning(request, f'Recorded {borrow_record.quantity}x {borrow_record.asset.name} as damaged.')
+        
         # Update asset status if all stock is available again
         if borrow_record.asset.get_available_quantity() >= borrow_record.asset.total_quantity:
             borrow_record.asset.status = 'AVAILABLE'
@@ -330,3 +383,178 @@ def staff_process_return(request, pk):
         return redirect('staff_manage_returns')
     
     return render(request, 'inventory/staff/process_return.html', {'borrow_record': borrow_record})
+
+@login_required
+def staff_dispose_asset(request, asset_id):
+    """Staff/Admin can directly dispose assets"""
+    asset = Asset.objects.get(id=asset_id)
+    
+    if request.method == 'POST':
+        quantity = int(request.POST.get('quantity', 1))
+        reason = request.POST.get('reason')
+        
+        if quantity > asset.get_available_quantity():
+            messages.error(request, 'Quantity exceeds available stock')
+            return redirect('staff_manage_assets')
+        
+        disposal = DisposalRecord.objects.create(
+            asset=asset,
+            quantity=quantity,
+            reason=reason,
+            disposed_by=request.user
+        )
+        
+        # Update asset immediately
+        asset.total_quantity -= quantity
+        asset.save()
+        
+        messages.success(request, f'Disposed {quantity} units of {asset.name}')
+        return redirect('staff_manage_assets')
+    
+    return render(request, 'inventory/staff/dispose_asset.html', {'asset': asset})
+
+def is_staff_or_admin(user):
+    """Check if user is staff or admin"""
+    return user.groups.filter(name='Staff').exists() or user.is_superuser
+
+@login_required
+def staff_disposal_list(request):
+    """View all disposal records"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    disposals = DisposalRecord.objects.all().select_related('asset', 'disposed_by').order_by('-disposal_date')
+    
+    context = {
+        'disposals': disposals,
+    }
+    return render(request, 'inventory/staff/disposal_list.html', context)
+
+@login_required
+def staff_maintenance_list(request):
+    """View all maintenance records"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    maintenance_records = MaintenanceRecord.objects.all().select_related('asset', 'requested_by', 'assigned_to')
+    
+    # Separate by status
+    pending = maintenance_records.filter(status='PENDING')
+    in_progress = maintenance_records.filter(status='IN_PROGRESS')
+    completed = maintenance_records.filter(status='COMPLETED')
+    
+    context = {
+        'maintenance_records': maintenance_records,
+        'pending': pending,
+        'in_progress': in_progress,
+        'completed': completed,
+        'pending_count': pending.count(),
+        'in_progress_count': in_progress.count(),
+    }
+    return render(request, 'inventory/staff/maintenance_list.html', context)
+
+@login_required
+def staff_create_maintenance(request, asset_id):
+    """Create a maintenance request"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    asset = get_object_or_404(Asset, id=asset_id)
+    
+    if request.method == 'POST':
+        maintenance_type = request.POST.get('maintenance_type')
+        description = request.POST.get('description')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        available_qty = asset.get_available_quantity()
+        if quantity < 1 or quantity > available_qty:
+            messages.error(request, f'Quantity must be between 1 and {available_qty} (currently available).')
+            return render(request, 'inventory/staff/create_maintenance.html', {'asset': asset})
+        
+        MaintenanceRecord.objects.create(
+            asset=asset,
+            maintenance_type=maintenance_type,
+            description=description,
+            quantity=quantity,
+            requested_by=request.user,
+            status='PENDING'
+        )
+        
+        # Update asset status to REPAIR
+        asset.status = 'REPAIR'
+        asset.save()
+        
+        messages.success(request, f'Maintenance request created for {asset.name}')
+        return redirect('staff_maintenance_list')
+    
+    return render(request, 'inventory/staff/create_maintenance.html', {'asset': asset})
+
+@login_required
+def staff_update_maintenance(request, maintenance_id):
+    """Update maintenance status (start, complete, cancel)"""
+    if not is_staff_or_admin(request.user):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    maintenance = get_object_or_404(MaintenanceRecord, id=maintenance_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'start':
+            maintenance.status = 'IN_PROGRESS'
+            maintenance.start_date = timezone.now().date()
+            maintenance.assigned_to = request.user
+            messages.success(request, 'Maintenance started.')
+            
+        elif action == 'complete':
+            cost = request.POST.get('cost')
+            notes = request.POST.get('notes')
+            
+            maintenance.status = 'COMPLETED'
+            maintenance.completion_date = timezone.now().date()
+            maintenance.cost = cost if cost else None
+            maintenance.notes = notes
+            
+            # Update asset status back to AVAILABLE
+            maintenance.asset.status = 'AVAILABLE'
+            maintenance.asset.save()
+            
+            messages.success(request, 'Maintenance completed.')
+            
+        elif action == 'cancel':
+            reason = request.POST.get('reason')
+            maintenance.status = 'CANCELLED'
+            maintenance.notes = f"Cancelled: {reason}"
+            
+            # Update asset status back to AVAILABLE
+            maintenance.asset.status = 'AVAILABLE'
+            maintenance.asset.save()
+            
+            messages.warning(request, 'Maintenance cancelled.')
+        
+        maintenance.save()
+        return redirect('staff_maintenance_list')
+    
+    return render(request, 'inventory/staff/update_maintenance.html', {'maintenance': maintenance})
+
+@login_required
+def staff_mark_repaired(request, damage_id):
+    """Mark a damaged item as repaired"""
+    if not (request.user.is_staff or request.user.groups.filter(name='Staff').exists()):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('asset_list')
+    
+    if request.method == 'POST':
+        damage = get_object_or_404(DamagedItem, pk=damage_id)
+        damage.is_repaired = True
+        damage.repaired_date = timezone.now().date()
+        damage.repaired_by = request.user
+        damage.save()
+        
+        messages.success(request, f'Marked {damage.quantity}x {damage.asset.name} as repaired.')
+    
+    return redirect('staff_reports')

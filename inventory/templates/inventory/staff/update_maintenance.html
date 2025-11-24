@@ -1,0 +1,90 @@
+{% extends 'inventory/staff/base.html' %}
+
+{% block title %}Update Maintenance - Rezo{% endblock %}
+
+{% block content %}
+<div class="w-full p-6">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Update Maintenance</h1>
+        <p class="text-gray-500">Manage maintenance status</p>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg rounded-2xl mb-8">
+        <div class="card-body">
+            <div class="grid grid-cols-3 gap-6">
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Asset</p>
+                    <p class="text-lg font-semibold">{{ maintenance.asset.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Type</p>
+                    <p class="text-lg">{{ maintenance.get_maintenance_type_display }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Status</p>
+                    <p class="text-lg font-semibold">{{ maintenance.status }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <p class="text-sm text-gray-500 mb-2">Description</p>
+                <p>{{ maintenance.description }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-lg rounded-2xl">
+        <div class="card-body space-y-6">
+            {% if maintenance.status == 'PENDING' %}
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="start">
+                <button type="submit" class="btn btn-primary rounded-2xl w-full">
+                    Start Maintenance
+                </button>
+            </form>
+            {% endif %}
+
+            {% if maintenance.status == 'IN_PROGRESS' %}
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="complete">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">Cost (Optional)</label>
+                    <input type="number" step="0.01" name="cost" placeholder="0.00" class="input input-bordered w-full">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">Notes</label>
+                    <textarea name="notes" rows="3" placeholder="Work performed..." class="textarea textarea-bordered w-full"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success rounded-2xl w-full">
+                    Mark as Completed
+                </button>
+            </form>
+            {% endif %}
+
+            {% if maintenance.status != 'COMPLETED' and maintenance.status != 'CANCELLED' %}
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="cancel">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-3">Cancellation Reason</label>
+                    <textarea name="reason" rows="2" required placeholder="Why cancel..." class="textarea textarea-bordered w-full"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-error rounded-2xl w-full">
+                    Cancel Maintenance
+                </button>
+            </form>
+            {% endif %}
+
+            <a href="{% url 'staff_maintenance_list' %}" class="btn btn-outline rounded-2xl w-full">
+                Back to List
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
