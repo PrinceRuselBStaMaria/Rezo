@@ -49,10 +49,14 @@
 
     <!-- Pending Requests -->
     <div class="mb-8">
-        <h2 class="text-2xl font-bold mb-4">Pending Requests (Awaiting Approval)</h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Pending Requests (Awaiting Approval)</h2>
+            <a href="{% url 'my_borrowings' %}" class="link">View All →</a>
+        </div>
         {% if pending_requests %}
+        <!-- Show only first 3 items as preview -->
         <div class="space-y-3">
-            {% for borrowing in pending_requests %}
+            {% for borrowing in pending_requests|slice:":3" %}
             <div class="card bg-base-100 shadow rounded-3xl">
                 <div class="card-body">
                     <div class="flex justify-between items-center">
@@ -102,9 +106,6 @@
                         </div>
                         <div class="text-right">
                             <span class="badge badge-success mb-3 rounded-full">✓ Approved</span>
-                            <a href="{% url 'return_asset' borrowing.id %}" class="btn btn-sm btn-warning rounded-xl">
-                                Return
-                            </a>
                         </div>
                     </div>
                 </div>
